@@ -1,0 +1,39 @@
+{
+  "NetworkingDev-BeanTinsCredentials": {
+    "UserPoolAdminClientScopedev": "beantinsusers/admin",
+    "UserPoolMemberClientScopedev": "beantinsusers/member",
+    "UserPoolIddev": "us-east-1_HqXE9cMpW",
+    "UserPoolMemberClientIddev": "5t65rohn0ophef04rblbpde54s",
+    "UserPoolArndev": "arn:aws:cognito-idp:us-east-1:451173013135:userpool/us-east-1_HqXE9cMpW",
+    "UserPoolAdminClientIddev": "c9s72eiq4if7ttphgd6dc0gtp"
+  },
+  "NetworkingDev-EmailListener": {
+    "EmailListenerQueueNamedev": "NetworkingDev-EmailListener-EmailListenerQueue4315D9AA-fYIfgzq4Scw6",
+    "EmailListenerQueueArndev": "arn:aws:sqs:us-east-1:451173013135:NetworkingDev-EmailListener-EmailListenerQueue4315D9AA-fYIfgzq4Scw6"
+  },
+  "NetworkingDev-MembershipEventBusFake": {
+    "MembershipEventBusFakeArndev": "arn:aws:events:us-east-1:451173013135:event-bus/NetworkingDevMembershipEventBusFakeMembershipdevEventBusFakeF085035C"
+  },
+  "NetworkingDev-ConnectionRequestTable": {
+    "ExportsOutputRefTableCD117FA1D18A8047": "NetworkingDev-ConnectionRequestTable-TableCD117FA1-SP7O5L8JHU5M",
+    "ExportsOutputFnGetAttTableCD117FA1StreamArnB270E65B": "arn:aws:dynamodb:us-east-1:451173013135:table/NetworkingDev-ConnectionRequestTable-TableCD117FA1-SP7O5L8JHU5M/stream/2022-04-13T08:46:30.124",
+    "ConnectionRequestTable": "NetworkingDev-ConnectionRequestTable-TableCD117FA1-SP7O5L8JHU5M",
+    "ConnectionRequstTableArndev": "arn:aws:dynamodb:us-east-1:451173013135:table/NetworkingDev-ConnectionRequestTable-TableCD117FA1-SP7O5L8JHU5M",
+    "ExportsOutputFnGetAttTableCD117FA1ArnE2C8C204": "arn:aws:dynamodb:us-east-1:451173013135:table/NetworkingDev-ConnectionRequestTable-TableCD117FA1-SP7O5L8JHU5M"
+  },
+  "NetworkingDev-EventBus": {
+    "EventBusArndev": "arn:aws:events:us-east-1:451173013135:event-bus/NetworkingDevEventBusEventBusdevCF5C9367",
+    "ExportsOutputFnGetAttEventBusdev37C78C26ArnFADAACA3": "arn:aws:events:us-east-1:451173013135:event-bus/NetworkingDevEventBusEventBusdevCF5C9367",
+    "ExportsOutputRefEventBusdev37C78C265258002D": "NetworkingDevEventBusEventBusdevCF5C9367"
+  },
+  "NetworkingDev-MemberProjection": {
+    "MemberProjectionArndev": "arn:aws:dynamodb:us-east-1:451173013135:table/NetworkingDev-MemberProjection-TableCD117FA1-WCZI4WJWMHX8",
+    "ExportsOutputRefTableCD117FA1D18A8047": "NetworkingDev-MemberProjection-TableCD117FA1-WCZI4WJWMHX8",
+    "MemberProjection": "NetworkingDev-MemberProjection-TableCD117FA1-WCZI4WJWMHX8",
+    "ExportsOutputFnGetAttTableCD117FA1ArnE2C8C204": "arn:aws:dynamodb:us-east-1:451173013135:table/NetworkingDev-MemberProjection-TableCD117FA1-WCZI4WJWMHX8"
+  },
+  "NetworkingDev-ConnectionRequestCommand": {
+    "ConnectionRequestApidevEndpoint7982A24E": "https://njwyk7p8fl.execute-api.us-east-1.amazonaws.com/dev/",
+    "ConnectionRequestEndpoint": "https://njwyk7p8fl.execute-api.us-east-1.amazonaws.com/dev/connection/request"
+  }
+}

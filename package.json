@@ -1,0 +1,45 @@
+{
+  "name": "networking",
+  "version": "0.1.0",
+  "bin": {
+    "networking": "provisioning/networking.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk",
+    "test:component": "jest --projects jest.component.config.ts",
+    "test:unit": "jest --projects jest.unit.config.ts",
+    "deploy": "npx cdk deploy NetworkingDev-* NetworkingDev/* --app \"npx ts-node provisioning/networking-dev.ts\" --outputs-file awsDeploy_outputs.json"
+  },
+  "devDependencies": {
+    "@aws-cdk/aws-apigateway": "1.150.0",
+    "@aws-cdk/aws-lambda-nodejs": "1.150.0",
+    "@aws-cdk/aws-ses-actions": "^1.152.0",
+    "@aws-sdk/client-sqs": "^3.72.0",
+    "@types/jest": "^26.0.10",
+    "@types/node": "^10.17.27",
+    "aws-cdk": "^2.21.1",
+    "esbuild": "^0.14.29",
+    "fs": "^0.0.1-security",
+    "got": "^11.8.3",
+    "jest": "^26.4.2",
+    "jest-cucumber": "^3.0.1",
+    "ts-jest": "^26.2.0",
+    "ts-node": "^9.0.0",
+    "typescript": "~3.9.7",
+    "winston": "^3.6.0"
+  },
+  "dependencies": {
+    "@aws-cdk/aws-apigatewayv2-authorizers-alpha": "^2.21.1-alpha.0",
+    "@aws-sdk/util-dynamodb": "^3.67.0",
+    "@aws/dynamodb-data-mapper": "^0.7.3",
+    "@aws/dynamodb-data-mapper-annotations": "^0.7.3",
+    "@types/aws-lambda": "8.10.93",
+    "aws-cdk-lib": "^2.21.1",
+    "aws-sdk": "^2.1110.0",
+    "constructs": "^10.0.0",
+    "source-map-support": "^0.5.16"
+  }
+}
