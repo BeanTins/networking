@@ -9,6 +9,8 @@
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
+    "test:component:fast": "export filter=\"not @slow\";jest --projects jest.component.config.ts",
+    "test:component:slow": "export filter=\"@slow\";jest --projects jest.component.config.ts",
     "test:component": "jest --projects jest.component.config.ts",
     "test:unit": "jest --projects jest.unit.config.ts",
     "deploy": "npx cdk deploy NetworkingDev-* NetworkingDev/* --app \"npx ts-node provisioning/networking-dev.ts\" --outputs-file awsDeploy_outputs.json"
@@ -33,12 +35,19 @@
   },
   "dependencies": {
     "@aws-cdk/aws-apigatewayv2-authorizers-alpha": "^2.21.1-alpha.0",
-    "@aws-sdk/util-dynamodb": "^3.67.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.85.0",
+    "@aws-sdk/client-dynamodb": "^3.85.0",
+    "@aws-sdk/client-eventbridge": "^3.85.0",
+    "@aws-sdk/client-ses": "^3.85.0",
+    "@aws-sdk/client-ssm": "^3.85.0",
+    "@aws-sdk/lib-dynamodb": "^3.85.0",
+    "@aws-sdk/util-dynamodb": "^3.85.0",
     "@aws/dynamodb-data-mapper": "^0.7.3",
     "@aws/dynamodb-data-mapper-annotations": "^0.7.3",
     "@types/aws-lambda": "8.10.93",
     "aws-cdk-lib": "^2.21.1",
     "aws-sdk": "^2.1110.0",
+    "aws-sdk-client-mock": "^0.6.2",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.16"
   }

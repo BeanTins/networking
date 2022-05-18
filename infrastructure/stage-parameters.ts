@@ -1,10 +1,10 @@
-import AWS from "aws-sdk"
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm"
 
 export class StageParameters {
-  private ssm: AWS.SSM
+  private ssm: SSMClient
 
   constructor(region: string){
-    this.ssm = new AWS.SSM({region: region})
+    this.ssm = new SSMClient({region: region})
   }
 
   async retrieve(name: string): Promise<string>
@@ -22,7 +22,7 @@ export class StageParameters {
     }
 
     try{
-      const result = await this.ssm.getParameter(options).promise()
+      const result = await this.ssm.send(new GetParameterCommand(options))
       parameterValue = result.Parameter!.Value!
     }
     catch (error)
@@ -37,7 +37,7 @@ export class StageParameters {
 
   buildStageParameterName(name: string, stage: string): string
   {
-    return name + "_" + stage
+    return name + stage
   }
 
   private getStage() {

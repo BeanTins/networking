@@ -3,7 +3,8 @@ import  { SQSClient,
   ReceiveMessageCommand, 
   GetQueueUrlCommand, 
   ReceiveMessageResult,
-  DeleteMessageCommand } from "@aws-sdk/client-sqs"
+  DeleteMessageCommand,
+PurgeQueueCommand } from "@aws-sdk/client-sqs"
 import logger from "./component-test-logger"
 
 export interface EventResponse
@@ -13,7 +14,7 @@ export interface EventResponse
 }
 
 export class EmailListenerQueueClient {
-  public readonly sqsClient: SQSClient
+  private sqsClient: SQSClient
   private url: string
   constructor(region: string) {
     this.sqsClient = new SQSClient({ region: region })
@@ -25,29 +26,33 @@ export class EmailListenerQueueClient {
 
     try {
       const params = {
-        QueueUrl: url
+        QueueUrl: url,
+        MaxNumberOfMessages: 10
       }   
-    
       const command = new ReceiveMessageCommand(params)
-      const response: ReceiveMessageResult = await this.sqsClient.send(command)
-  
-      logger.verbose("event listener queue response - " + JSON.stringify(response))
-
-      if (response.Messages != undefined && response.Messages.length > 0)
+    
+      let response: any
+      do
       {
-        for (const message of response.Messages)
+        response = await this.sqsClient.send(command)
+  
+        if (response.Messages != undefined && response.Messages.length > 0)
         {
-          await this.deleteMessage(message.ReceiptHandle!)
-          logger.verbose("Deleted notification -" + message)
+          for (const message of response.Messages)
+          {
+            await this.deleteMessage(message.ReceiptHandle!)
+            logger.verbose("Deleted email notification - " + JSON.stringify(message))
+          }
         }
-      }
+      } while((response.Messages != undefined) && (response.Messages.length < 10))
     }
     catch(error)
     {
       logger.error("Failed to receive event -  " + error)
       throw error
     }
-  }
+  }  
+
   async getUrl()
   {
     if (this.url == undefined)
@@ -61,7 +66,7 @@ export class EmailListenerQueueClient {
         const command = new GetQueueUrlCommand(input)
         const response = await this.sqsClient.send(command)
     
-        logger.verbose("event listener queue url response - " + JSON.stringify(response))
+        logger.verbose("email event listener queue url response - " + JSON.stringify(response))
         this.url = response.QueueUrl!
       }
       catch(error)
@@ -77,27 +82,31 @@ export class EmailListenerQueueClient {
   async waitForEmail(sender: string, recipient: string, subject: string) : Promise<boolean>
   {
     let matchFound = false
-    let event: EventResponse|undefined
+
     const url = await this.getUrl()
 
     try {
       const params = {
         QueueUrl: url,
-        WaitTimeSeconds: 10
+        WaitTimeSeconds: 20,
+        MaxNumberOfMessages: 1,
       }   
     
       const command = new ReceiveMessageCommand(params)
       const response: ReceiveMessageResult = await this.sqsClient.send(command)
   
-      logger.verbose("event listener queue response - " + JSON.stringify(response))
+      logger.verbose("email event listener queue response - " + JSON.stringify(response))
 
       if (response.Messages != undefined && response.Messages.length > 0)
       {
+        logger.verbose("response - " + JSON.stringify(response))
         for (const message of response.Messages)
         {
           const body = message.Body!
 
           const bodyObject = JSON.parse(body)
+
+          logger.verbose(JSON.stringify(bodyObject))
 
           if (bodyObject.Type == "Notification")
           {
@@ -107,11 +116,22 @@ export class EmailListenerQueueClient {
 
               const headers = messageDetails.mail.commonHeaders
 
-              logger.verbose(JSON.stringify(headers))
-              if ((headers.from[0] == sender) &&
-                  (headers.to[0] == recipient) &&
-                  (headers.subject == subject))
+              if (headers.from[0] != sender) 
               {
+                logger.verbose("actual sender: " + headers.from[0] + " expected sender:" + sender)
+              }
+              else if (headers.to[0] != recipient)
+              {
+                logger.verbose("actual recipient: " + headers.to[0] + " expected recipient:" + recipient)
+              }
+              else if (headers.subject != subject)
+              {
+                logger.verbose("actual subject: " + headers.subject + " expected subject:" + subject)
+              }
+              else
+              {
+                logger.verbose("email match found")
+
                 matchFound = true
               }
             }
@@ -126,7 +146,7 @@ export class EmailListenerQueueClient {
       }
       else
       {
-          logger.verbose("event listener queu response has no messages")
+          logger.verbose("email event listener queue response has no messages")
       }
     }
     catch(error)
@@ -152,7 +172,7 @@ export class EmailListenerQueueClient {
 
       const response = await this.sqsClient.send(command)
 
-      logger.verbose("event listener delete message response - " + JSON.stringify(response))
+      logger.verbose("email event listener delete message response - " + JSON.stringify(response))
     }
     catch(error)
     {

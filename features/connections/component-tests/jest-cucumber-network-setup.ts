@@ -1,8 +1,14 @@
 
 import { loadFeatures, autoBindSteps } from "jest-cucumber";
 
-import { requestConnectionSteps } from "./helpers/request-connection.steps";
+import { connectionSteps } from "./helpers/connection.steps";
 
-const features = loadFeatures("**/*.feature");
-autoBindSteps(features, [ requestConnectionSteps ]);
+let options:any = {}
+
+if (process.env.filter != undefined)
+{
+    options = {tagFilter: process.env.filter}
+}
+const features = loadFeatures("**/*.feature", options)
+autoBindSteps(features, [ connectionSteps ]);
 

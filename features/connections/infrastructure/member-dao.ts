@@ -52,6 +52,8 @@ export class MemberDAO
       matchingMember = currentMatchingMember
       break
     }
+    
+
     return matchingMember
   }
 

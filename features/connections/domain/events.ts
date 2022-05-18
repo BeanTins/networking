@@ -1,4 +1,4 @@
-export class ConnectionRequestedEvent {
+export class ConnectionRequested {
     invitationId: string
     initiatingMemberId: string
     invitedMemberId: string
@@ -10,3 +10,13 @@ export class ConnectionRequestedEvent {
     }
   }
   
+export class ConnectionAdded {
+  memberId: string
+  connectionMemberId: string
+
+  constructor(memberId: string, connectionMemberId: string){
+    this.memberId = memberId
+    this.connectionMemberId = connectionMemberId
+  }
+}
+    

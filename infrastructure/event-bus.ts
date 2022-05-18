@@ -35,7 +35,7 @@ export class NetworkingEventBus extends Stack {
    
     new Rule(this, "ListenerQueueRule", {
       eventBus: this.eventBus,
-      eventPattern: {detailType: ["*"]},
+      eventPattern: {detailType: [ "ConnectionAdded", "UnspecifiedConnectionRequest" ]},
       targets: [new SqsQueue(queue)]
     })
   }

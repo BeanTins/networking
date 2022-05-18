@@ -1,4 +1,3 @@
-
 import { lambdaHandler } from "../request"
 import { APIGatewayEvent, Context,APIGatewayProxyResult  } from "aws-lambda"
 import { DataMapperFactoryMock, DataMapperMock} from "./helpers/data-mapper-factory-mock"
@@ -24,20 +23,21 @@ beforeEach(() => {
 test("signup successful for new user", async () => {
 
     members.queryResponse([{name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"}])
-    requestConnection("1234", "5678")
     
-    const result:APIGatewayProxyResult  = await lambdaHandler(event, context)
+    const result:APIGatewayProxyResult  = await whenRequestConnection("1234", "5678")
   
     expect(result.statusCode).toBe(201)
 })
 
-function requestConnection(initiatingMemberId: string|null, invitedMemberId: string|null){
-    event = {
-      body: JSON.stringify(
-      {  
-        initiatingMemberId: initiatingMemberId,    
-        invitedMemberId: invitedMemberId
-      })
-    } as APIGatewayEvent
-  }
+async function whenRequestConnection(initiatingMemberId: string|null, invitedMemberId: string|null){
+  event = {
+    body: JSON.stringify(
+    {  
+      initiatingMemberId: initiatingMemberId,    
+      invitedMemberId: invitedMemberId
+    })
+  } as APIGatewayEvent
+
+  return await lambdaHandler(event, context)
+}
   

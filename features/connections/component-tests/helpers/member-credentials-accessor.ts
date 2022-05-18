@@ -1,16 +1,20 @@
 
-import CognitoIdentityServiceProvider from "aws-sdk/clients/cognitoidentityserviceprovider"
-import AWS from "aws-sdk"
+import {
+  CognitoIdentityProviderClient,
+  ListUsersCommand,
+  AdminDeleteUserCommand,
+  AdminConfirmSignUpCommand,
+  InitiateAuthCommand,
+  SignUpCommand
+} from "@aws-sdk/client-cognito-identity-provider"
 import logger from "./component-test-logger"
 
 export class MemberCredentialsAccessor {
-  private client: CognitoIdentityServiceProvider
+  private client: CognitoIdentityProviderClient
 
   constructor(region: string)
   {
-    AWS.config.update({region: region})
-    this.client = new CognitoIdentityServiceProvider()
-
+    this.client = new CognitoIdentityProviderClient({region: region})
   }
 
   async clear()
@@ -21,28 +25,28 @@ export class MemberCredentialsAccessor {
 
    try
    {
-     const response = await this.client.listUsers(listParams).promise()
+     const response = await this.client.send(new ListUsersCommand(listParams))
 
      for (const user of response.Users!)
      {
-       await this.deleteMember(this.client, user.Username!)
+       await this.deleteMember(user.Username!)
      }
    }
    catch(error)
    {
-    logger.error("Failed to clear member credentials: " + error)
+     logger.error("Failed to clear member credentials: " + error)
    }
 
   } 
 
-  private async deleteMember(client: CognitoIdentityServiceProvider, username: string) {
+  private async deleteMember(username: string) {
     const params = {
       Username: username,
       UserPoolId: process.env.UserPoolId!
     }
 
     try {
-      const response = await client.adminDeleteUser(params).promise()
+      const response = await this.client.send(new AdminDeleteUserCommand(params))
       logger.verbose("deleting user response - " + JSON.stringify(response))
     }
     catch (error) {
@@ -59,7 +63,7 @@ export class MemberCredentialsAccessor {
         UserPoolId: process.env.UserPoolId!
       }
       logger.verbose(confirmSignupParams)
-      const response = await this.client.adminConfirmSignUp(confirmSignupParams).promise()
+      const response = await this.client.send(new AdminConfirmSignUpCommand(confirmSignupParams))
       logger.verbose("confirmUser response - " + JSON.stringify(response))
     }
     catch(error)
@@ -93,8 +97,7 @@ export class MemberCredentialsAccessor {
         }
       }
       
-      const sessionData = await this.client.initiateAuth(auth2Params).promise()
-      //const sessionData = await this.client.adminInitiateAuth(authParams).promise()
+      const sessionData = await this.client.send(new InitiateAuthCommand(auth2Params))
       logger.verbose("session " + JSON.stringify(sessionData))
       idToken = sessionData.AuthenticationResult!.IdToken
       logger.verbose("acctok " + idToken)
@@ -117,7 +120,7 @@ export class MemberCredentialsAccessor {
         Password: password
       }
   
-      await this.client.signUp(params).promise()
+      await this.client.send(new SignUpCommand(params))
     }
     catch(error)
     {

@@ -1,11 +1,9 @@
-import { DynamoDB } from "aws-sdk"
 import { DataMapper } from "@aws/dynamodb-data-mapper"
 import { DataMapperFactory } from "../infrastructure/data-mapper-factory"
 import { v4 as uuidv4 } from "uuid"
 import {
   attribute,
   hashKey,
-  rangeKey,
   table
 } from "@aws/dynamodb-data-mapper-annotations"
   
@@ -22,13 +20,13 @@ export class ConnectionRequest {
   invitedMemberId: string
 
   static create(initiatingMemberId: string, invitedMemberId: string){
-    let member = new ConnectionRequest()
+    let connectionRequest = new ConnectionRequest()
 
-    member.invitationId = uuidv4()
-    member.initiatingMemberId = initiatingMemberId
-    member.invitedMemberId = invitedMemberId
+    connectionRequest.invitationId = uuidv4()
+    connectionRequest.initiatingMemberId = initiatingMemberId
+    connectionRequest.invitedMemberId = invitedMemberId
 
-    return member
+    return connectionRequest
   }
 }
 
@@ -42,6 +40,37 @@ export class ConnectionRequestDAO
   async add(connectionRequest: ConnectionRequest)
   {
     await this.dataMapper.put(connectionRequest)
+  }
+
+  async remove(invitationId: string)
+  {
+    const toDelete = new ConnectionRequest()
+    toDelete.invitationId = invitationId
+    await this.dataMapper.delete(toDelete)
+  }
+
+  async get(invitationId: string): Promise<ConnectionRequest|undefined>  
+  {
+    const toGet = new ConnectionRequest()
+    toGet.invitationId = invitationId
+    return await this.dataMapper.get(toGet)
+  }
+
+  async getInvitationId(initiatingMemberId: string, invitedMemberId: string): Promise<string|undefined>  
+  {
+    var invitationId: string|undefined
+    const matchingConnectionRequestIterator = this.dataMapper.query(ConnectionRequest, 
+      { initiatingMemberId: initiatingMemberId, 
+        invitedMemberId: invitedMemberId, }, 
+        {indexName: "membersIndex"})
+
+    for await (const matchingMember of matchingConnectionRequestIterator)
+    {
+      invitationId = matchingMember.invitationId
+      break
+    }
+
+    return invitationId
   }
 
   async exists(invitationId: string): Promise<boolean|null>
@@ -59,6 +88,6 @@ export class ConnectionRequestDAO
             
     return connectionExists
   }
-  
+
 }
 

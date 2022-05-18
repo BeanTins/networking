@@ -4,7 +4,7 @@ import { OpenAPISpecBuilder, HttpMethod} from "../../infrastructure/open-api-spe
 import { MemberDAO } from "./infrastructure/member-dao"
 import { ConnectionRequestDAO, ConnectionRequest } from "./infrastructure/connection-request-dao"
 import { HttpResponse } from "./infrastructure/http-response"
-import { EventBridge } from "aws-sdk"
+import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge"
 import logger  from "./infrastructure/logger"
 
 export const specBuilder = function() { 
@@ -83,7 +83,7 @@ export class RequestCommandHandler {
   }
 
   private async publishEvent(event: UnspecifiedConnectionRequest) {
-    const eventbridge = new EventBridge()
+    const eventbridge = new EventBridgeClient({region: process.env.AWS_REGION!})
 
     const params = {
       Entries: [
@@ -96,7 +96,7 @@ export class RequestCommandHandler {
       ]
     }
 
-    const result = await eventbridge.putEvents(params).promise()
+    const result = await eventbridge.send(new PutEventsCommand(params))
   }
 }
 

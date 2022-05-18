@@ -91,6 +91,69 @@ test("request body with string parameter min length", () => {
   }
 })
 
+test("string path parameter defined", () => {
+  let endpoint = specBuilder.withEndpoint("/connection/approve", HttpMethod.Post)
+
+  endpoint.withStringPathParameter({name: "invitationId", description: "id for a connection invititation"})
+
+  spec = specBuilder.build()
+
+  const parameter = spec["paths"]["/connection/approve"]["post"]["parameters"][0]
+
+  expect(parameter).toBeDefined()  
+  expect(parameter["in"]).toBe("path")  
+  expect(parameter["type"]).toBe("string")
+})
+
+test("string path parameter name", () => {
+  let endpoint = specBuilder.withEndpoint("/connection/approve", HttpMethod.Post)
+
+  endpoint.withStringPathParameter({name: "invitationId", description: "id for a connection invititation"})
+
+  spec = specBuilder.build()
+
+  const parameter = spec["paths"]["/connection/approve"]["post"]["parameters"][0]
+
+  expect(parameter["name"]).toBe("invitationId")  
+})
+
+test("string path parameter description", () => {
+  let endpoint = specBuilder.withEndpoint("/connection/approve", HttpMethod.Post)
+
+  endpoint.withStringPathParameter({name: "invitationId", description: "id for a connection invititation"})
+
+  spec = specBuilder.build()
+
+  const parameter = spec["paths"]["/connection/approve"]["post"]["parameters"][0]
+
+  expect(parameter["description"]).toBe("id for a connection invititation")  
+})
+
+test("string path parameter always required", () => {
+  let endpoint = specBuilder.withEndpoint("/connection/approve", HttpMethod.Post)
+
+  endpoint.withStringPathParameter({name: "invitationId", description: "id for a connection invititation"})
+
+  spec = specBuilder.build()
+
+  const parameter = spec["paths"]["/connection/approve"]["post"]["parameters"][0]
+
+  expect(parameter["required"]).toBe(true)  
+})
+
+test("string path parameter with enum", () => {
+  let endpoint = specBuilder.withEndpoint("/connection/approve", HttpMethod.Post)
+
+  endpoint.withStringPathParameter({name: "decision", description: "decision on an invitation", enum: ["approve", "reject"]})
+
+  spec = specBuilder.build()
+
+  const parameter = spec["paths"]["/connection/approve"]["post"]["parameters"][0]
+
+  expect(parameter["enum"]).toStrictEqual(["approve", "reject"])  
+})
+
+
 test("request body with string parameter max length", () => {
   let endpoint = specBuilder.withEndpoint("/member/signup", HttpMethod.Post)
 

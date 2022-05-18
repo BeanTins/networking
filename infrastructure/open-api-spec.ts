@@ -77,6 +77,11 @@ export class StringProperty extends Property{
    maxLength?: number
 }
 
+export class Parameter {
+   name: string
+   description: string
+   enum?: string[]
+}
 
 type NamedProperty = Record<string, StringPropertyDefinition|IntegerPropertyDefinition>
 
@@ -109,6 +114,29 @@ export class EndpointBuilder{
       this.endpoint.responses[code] = {}
       
       this.endpoint.responses[code].description = message
+   }
+
+   withStringPathParameter(param: Parameter)
+   {
+      if (this.endpoint.parameters == undefined)
+      {
+         this.endpoint.parameters = []
+      }
+
+      let formattedParam: any = {
+         in: "path",
+         type: "string",
+         name: param.name,
+         description: param.description,
+         required: true
+      }
+
+      if (param.enum != undefined)
+      {
+         formattedParam["enum"] = param.enum
+      }
+
+      this.endpoint.parameters.push(formattedParam)
    }
 
    withRequestBodyStringProperty(param: StringProperty)

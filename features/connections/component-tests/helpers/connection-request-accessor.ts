@@ -1,14 +1,16 @@
-import {DocumentClient} from "aws-sdk/clients/dynamodb"
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
+import { DynamoDBDocumentClient, ScanCommand, DeleteCommand, PutCommand } from "@aws-sdk/lib-dynamodb"
 import logger from "./component-test-logger"
 
 export class ConnectionRequestAccessor {
   
-  private dynamoDB: DocumentClient
+  private dynamoDB: DynamoDBClient
   private connectionRequestTableName: string
 
   constructor(region: string)
   {
-    this.dynamoDB = new DocumentClient({region: region})
+    const client = new DynamoDBClient({region: region})
+    this.dynamoDB = DynamoDBDocumentClient.from(client)
 
     this.connectionRequestTableName = process.env.ConnectionRequestTable!
   }
@@ -19,7 +21,7 @@ export class ConnectionRequestAccessor {
         TableName: this.connectionRequestTableName
     }
     
-    const items =  await this.dynamoDB.scan(queryTableName).promise()
+    const items =  await this.dynamoDB.send(new ScanCommand(queryTableName))
     const tableName = this.connectionRequestTableName
     const dynamoDB = this.dynamoDB
   
@@ -35,7 +37,7 @@ export class ConnectionRequestAccessor {
           
           try
           {
-              await dynamoDB.delete(record).promise()
+              await dynamoDB.send(new DeleteCommand(record))
           }
           catch(error)
           {
@@ -44,5 +46,60 @@ export class ConnectionRequestAccessor {
       }
     }
   } 
+
+  async add(initiatingMemberId: string, invitedMemberId: string, invitationId: string)
+  {
+    try
+    {
+      const items =  await this.dynamoDB.send(new PutCommand({
+          TableName: this.connectionRequestTableName,
+          Item: {
+            "initiatingMemberId" : initiatingMemberId,
+            "invitedMemberId" : invitedMemberId,
+            "invitationId" : invitationId
+          }
+        }))
+    }
+    catch(error)
+    {
+      logger.error("Failed to add connection request " + error)
+    }
+  }
+
+  async waitForRemoval(initiatingMemberId: string, invitedMemberId: string, retries: number = 3, retryWaitInMillisecs = 500)
+  {
+    let itemRemoved: boolean = false
+    var params = {
+      FilterExpression: "#initiatingMemberId = :initiatingMemberId AND #invitedMemberId = :invitedMemberId",
+      ExpressionAttributeValues: {
+        ":initiatingMemberId": initiatingMemberId,
+        ":invitedMemberId": invitedMemberId,
+      },
+      ExpressionAttributeNames: 
+       { "#initiatingMemberId": "initiatingMemberId",
+         "#invitedMemberId": "invitedMemberId" },
+      TableName: this.connectionRequestTableName
+    }
+    logger.verbose(JSON.stringify(params))
+    try{
+      for (let retry = 0; retry < retries; retry++) {
+        let result = await this.dynamoDB.send(new ScanCommand(params))
+        logger.verbose("wait for connection request removal - " + JSON.stringify(result))
+        if((result.Count != null) && result.Count == 0)
+        {
+          itemRemoved = true
+          break
+        }
+        await new Promise(r => setTimeout(r, retryWaitInMillisecs * Math.pow(2, retry)))
+      }
+    }
+    catch(err){
+      logger.error(err)
+    }
+ 
+    return itemRemoved
+  }
+
+
 }
 

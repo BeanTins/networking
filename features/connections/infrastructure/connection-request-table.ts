@@ -1,4 +1,4 @@
-import {Table, AttributeType, StreamViewType} from "aws-cdk-lib/aws-dynamodb"
+import {Table, AttributeType, StreamViewType, ProjectionType} from "aws-cdk-lib/aws-dynamodb"
 import { StackProps, RemovalPolicy, CfnOutput } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import {IPrincipal} from "aws-cdk-lib/aws-iam"
@@ -16,6 +16,15 @@ export class ConnectionRequestTable extends EnvvarsStack {
       partitionKey: { name: "invitationId", type: AttributeType.STRING },
       removalPolicy: RemovalPolicy.DESTROY,
       stream: StreamViewType.NEW_AND_OLD_IMAGES,
+    })
+
+    this.connectionRequests.addGlobalSecondaryIndex({
+      indexName: "membersIndex",
+      partitionKey: {name: "initiatingMemberId", type: AttributeType.STRING},
+      sortKey: { name: "invitedMemberId", type: AttributeType.STRING},
+      readCapacity: 1,
+      writeCapacity: 1,
+      projectionType: ProjectionType.ALL,
     })
 
     this.addEnvvar("ConnectionRequestTable", this.connectionRequests.tableName)

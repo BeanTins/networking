@@ -1,14 +1,16 @@
-import {DocumentClient} from "aws-sdk/clients/dynamodb"
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
+import { DynamoDBDocumentClient, ScanCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb"
 import logger from "./component-test-logger"
 
 export class MemberProjectionAccessor {
   
-  private dynamoDB: DocumentClient
+  private dynamoDB: DynamoDBDocumentClient
   private memberProjectionName: string
 
   constructor(region: string)
   {
-    this.dynamoDB = new DocumentClient({region: region})
+    const client = new DynamoDBClient({region: region})
+    this.dynamoDB = DynamoDBDocumentClient.from(client)
     this.memberProjectionName = process.env.MemberProjection!
     logger.verbose(process.env.MemberProjection)
   }
@@ -19,7 +21,7 @@ export class MemberProjectionAccessor {
         TableName: this.memberProjectionName
     }
     
-    const items =  await this.dynamoDB.scan(queryTableName).promise()
+    const items =  await this.dynamoDB.send(new ScanCommand(queryTableName))
     const tableName = this.memberProjectionName
     const dynamoDB = this.dynamoDB
   
@@ -35,7 +37,7 @@ export class MemberProjectionAccessor {
           
           try
           {
-              await dynamoDB.delete(memberRecord).promise()
+              await dynamoDB.send(new DeleteCommand(memberRecord))
           }
           catch(error)
           {
@@ -45,29 +47,38 @@ export class MemberProjectionAccessor {
     }
   } 
 
-  async waitForMembersToBeStored(nameList: String[]): Promise<boolean>
+  async waitForMembersToBeStored(nameList: String[], retries: number = 3, retryWaitInMillisecs = 500): Promise<boolean>
   {
     let memberPresent: boolean = false
+
+    var nameObject: any = {};
+    var index = 0;
+    nameList.forEach(function(value) {
+        index++;
+        var titleKey = ":name"+index;
+        nameObject[titleKey.toString()] = value;
+    });
+    
     var params = {
-      FilterExpression: "#name = :name",
-      ExpressionAttributeValues: {
-        ":name": nameList 
-      },
+      FilterExpression: "#name IN ("+Object.keys(nameObject).toString()+ ")",
+      ExpressionAttributeValues: nameObject,
       ExpressionAttributeNames: { "#name": "name" },
       TableName: this.memberProjectionName
     }
     logger.verbose(JSON.stringify(params))
     try{
-      for (let retry = 0; retry < 3; retry++) {
-        let result = await this.dynamoDB.scan(params).promise()
+      for (let retry = 0; retry < retries; retry++) {
+        let result = await this.dynamoDB.send(new ScanCommand(params))
         logger.verbose("wait for member presence scan result - " + JSON.stringify(result))
-        if((result.Count != null) && result.Count > 0)
+        if((result.Count != null) && result.Count == nameList.length)
         {
           const item = result.Items![0]
+          logger.verbose("member is stored - " + item)
+
           memberPresent = true
           break
         }
-        await new Promise(r => setTimeout(r, 500))
+        await new Promise(r => setTimeout(r, retryWaitInMillisecs * Math.pow(2, retry)))
       }
     }
     catch(err){

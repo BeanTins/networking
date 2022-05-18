@@ -1,19 +1,22 @@
-
 export class DataMapperMock{
 
   put: jest.Mock
   query: jest.Mock
+  get: jest.Mock
+  delete: jest.Mock
 
   constructor(){
+    this.get = jest.fn()
     this.put = jest.fn()
     this.query = jest.fn()
+    this.delete = jest.fn()
   }
 
   queryResponse(records: any[]){
 
     const myAsyncIterable = {
       *[Symbol.asyncIterator]() {
-        for (const record in records)
+        for (const record of records)
         {
           yield record
         }
@@ -21,6 +24,31 @@ export class DataMapperMock{
     }
 
     this.query.mockReturnValue(myAsyncIterable)
+  }
+
+  queryUsingSet(set: any[], keyName: string)
+  {
+    this.queryFake((valueConstructor, keyCondition) => {
+
+      var matches = set.filter(obj => {
+        return keyCondition[keyName] == obj[keyName]
+      })
+
+      const myAsyncIterable = {
+        *[Symbol.asyncIterator]() {
+          for (const match of matches)
+          yield match
+        }
+      }
+
+      return myAsyncIterable
+    })
+  } 
+
+  queryFake(fake: (classType: any, filter: any)=>any){
+    
+    this.query = jest.fn()
+    this.query.mockImplementation(fake)
   }
 
   querySequenceResponses(recordsSequence: any[][]){
@@ -59,17 +87,27 @@ export class DataMapperFactoryMock{
     return jest.fn().mockImplementation(() => {
       return {
         put: (item: any) => {
-          const dataMapper = this.resolveDataMapper(item)
+          const dataMapper = this.resolveDataMapper(item, "put")
           return dataMapper!.put(item)
         },
-        query: (item: any) => {
-          const dataMapper = this.resolveDataMapper(item)
-          return dataMapper!.query(item)}
+        get: (item: any) => {
+          const dataMapper = this.resolveDataMapper(item, "get")
+          return dataMapper!.get(item)
+        },
+        query: (valueConstructor: any, keyCondition: any) => {
+          const dataMapper = this.resolveDataMapper(valueConstructor, "query")
+          const result = dataMapper!.query(valueConstructor, keyCondition)
+          return result
+        },
+        delete: (item: any) => {
+          const dataMapper = this.resolveDataMapper(item, "delete")
+          return dataMapper!.delete(item)
+        }
       }
     })
   }
 
-  resolveDataMapper(item: any)
+  resolveDataMapper(item: any, method: string)
   {
     let itemName = item.name
     if (itemName == undefined)
@@ -78,14 +116,14 @@ export class DataMapperFactoryMock{
     }
     if (itemName == undefined)
     {
-      throw Error("no name found for datamapper record type" + JSON.stringify(item))
+      throw Error("no name found for datamapper record type" + JSON.stringify(item)) 
     }
 
     const dataMapper = this.dataMappers.get(itemName)
 
     if (dataMapper == undefined)
     {
-      throw Error("no datamapper found for " + JSON.stringify(item))
+      throw Error("no datamapper found for " + JSON.stringify(item) + method)
     }
     return dataMapper
   }

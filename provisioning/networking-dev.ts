@@ -5,29 +5,45 @@ import { BeanTinsCredentials, StoreType} from "../../credentials/infrastructure/
 import { MembershipEventBusFake } from "../features/connections/component-tests/helpers/membership-event-bus-fake"
 import { NetworkingStage } from "./networking-stage"
 import { EmailListenerStack } from "../features/connections/component-tests/helpers/email-listener-stack"
+import { EventListenerStack } from "../features/connections/component-tests/helpers/event-listener-stack"
+import { StageParameters } from "../infrastructure/stage-parameters"
 
-const app = new App()
+async function main(): Promise<void> 
+{
+  const app = new App()
 
-const beantinsCredentials = new BeanTinsCredentials(app, "NetworkingDev-BeanTinsCredentials", {
-  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-  stageName: "dev",
-  storeTypeForSettings: StoreType.Output 
-})
+  const NotificationEmailAddress = await new StageParameters("us-east-1").retrieve("NotificationEmailAddress")
 
-const emailListener = new EmailListenerStack(app, "NetworkingDev-EmailListener", {stageName: "dev"})
+  const beantinsCredentials = new BeanTinsCredentials(app, "NetworkingDev-BeanTinsCredentials", {
+    env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+    stageName: "dev",
+    storeTypeForSettings: StoreType.Output 
+  })
 
-const membershipEventBus = new MembershipEventBusFake(app, "NetworkingDev-MembershipEventBusFake", {
-  stageName: "dev",
-  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION }
-})
+    const membershipEventBus = new MembershipEventBusFake(app, "NetworkingDev-MembershipEventBusFake", {
+    stageName: "dev",
+    env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION }
+  })
 
-const stage = new NetworkingStage(app, "NetworkingDev", {
-  stageName: "dev",
-  membershipEventBusArn: Fn.importValue("MembershipEventBusFakeArndev"),
-  emailConfigurationSet: emailListener.ConfigSetName,
-  userPoolArn: Fn.importValue("UserPoolArndev"),
-  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-})
+  const emailListener = new EmailListenerStack(app, "NetworkingDev-EmailListener", {stageName: "dev"})
 
-app.synth()
+  const eventListener = new EventListenerStack(app, "NetworkingDev-EventListener", {
+    stageName: "dev",
+    env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+  })
+  
+  const stage = new NetworkingStage(app, "NetworkingDev", {
+    stageName: "dev",
+    notificationEmailAddress: NotificationEmailAddress,
+    membershipEventBusArn: Fn.importValue("MembershipEventBusFakeArndev"),
+    emailConfigurationSet: emailListener.ConfigSetName,
+    userPoolArn: Fn.importValue("UserPoolArndev"),
+    eventListenerQueueArn: Fn.importValue("EventListenerQueueArndev"),
+    env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+  })
+
+  app.synth()
+}
+
+main().catch(console.error)
 

@@ -8,24 +8,26 @@ import * as path from "path"
 import {Table} from "aws-cdk-lib/aws-dynamodb"
 import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam"
 
-interface InvitationPolicyStackProps extends StackProps {
-  connectionRequestTable: Table
+interface ConfirmationPolicyStackProps extends StackProps {
+  connectionRequestTableName: string
+  connectionsTable: Table;
   eventBusName: string
   memberProjectionName: string
   emailConfigurationSet?: string 
   notificationEmailAddress: string
 }
 
-export class InvitationPolicyStack extends Stack {
+export class ConfirmationPolicyStack extends Stack {
 
   public readonly lambda: Function
 
-  constructor(scope: Construct, id: string, props: InvitationPolicyStackProps) {
+  constructor(scope: Construct, id: string, props: ConfirmationPolicyStackProps) {
     super(scope, id, props)
 
     let environment: any = {
       EventBusName: props.eventBusName, 
-      MemberProjection: props.memberProjectionName,
+      MemberProjection: props.memberProjectionName, 
+      ConnectionRequestTable: props.connectionRequestTableName,
       NotificationEmailAddress: props.notificationEmailAddress
     }
 
@@ -34,13 +36,13 @@ export class InvitationPolicyStack extends Stack {
       environment["emailConfigurationSet"] = props.emailConfigurationSet
     }
 
-    this.lambda = new NodejsFunction(this, "InvitationPolicyFunction", {
+    this.lambda = new NodejsFunction(this, "ConfirmationPolicyFunction", {
       environment: environment,
       memorySize: 1024,
       timeout: Duration.seconds(5),
       runtime: Runtime.NODEJS_14_X,
       handler: "lambdaHandler",
-      entry: path.join(__dirname, "invitation-policy.ts"),
+      entry: path.join(__dirname, "confirmation-policy.ts"),
     })
 
     this.lambda.addToRolePolicy(
@@ -55,7 +57,7 @@ export class InvitationPolicyStack extends Stack {
       }),
     )
     
-    const source = new DynamoEventSource(props.connectionRequestTable, {
+    const source = new DynamoEventSource(props.connectionsTable, {
       startingPosition: StartingPosition.LATEST,
       batchSize: 1
     })

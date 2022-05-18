@@ -1,28 +1,31 @@
 import { Context, DynamoDBStreamEvent } from "aws-lambda"
 import { unmarshall } from "@aws-sdk/util-dynamodb"
-import { EventBridge } from "aws-sdk"
-import { AttributeValue} from "aws-sdk/clients/dynamodb"
-import { ConnectionRequestedEvent } from "./domain/events"
+import { AttributeValue} from "@aws-sdk/client-dynamodb"
+import { ConnectionRequested } from "./domain/events"
 import { MemberDAO } from "./infrastructure/member-dao"
 import logger from "./infrastructure/logger"
-import { ConnectionInvitationEmailSender } from "./infrastructure/connection-invitation-email-sender"
+import { InvitationSendEmailCommand } from "./infrastructure/invitation-send-email-command"
+import { SESClient } from "@aws-sdk/client-ses"
+import { EventDispatcher } from "./infrastructure/event-dispatcher"
 
 export const lambdaHandler = async (event: DynamoDBStreamEvent, context: Context): Promise<any> => {
 
-  const policy = new InviteConnectionPolicy()
+  const policy = new InvitationPolicy()
 
-  await policy.invokeInvitation(event)
+  await policy.invoke(event)
 }
 
-class InviteConnectionPolicy {
+class InvitationPolicy {
 
-  private commandHandler: SendConnectionEmailCommandHandler
+  private commandHandler: SendInvitationEmailCommandHandler
+  private eventDispatcher: EventDispatcher
 
   constructor(){
-    this.commandHandler = new SendConnectionEmailCommandHandler()
+    this.commandHandler = new SendInvitationEmailCommandHandler()
+    this.eventDispatcher = new EventDispatcher(process.env.AWS_REGION!)
   }
 
-  async invokeInvitation(dynamoDBStreamEvent: DynamoDBStreamEvent) {
+  async invoke(dynamoDBStreamEvent: DynamoDBStreamEvent) {
 
     try
     {
@@ -30,11 +33,11 @@ class InviteConnectionPolicy {
 
       if (event != undefined)
       {
-        const command = new SendConnectionEmailCommand(event.invitationId, event.initiatingMemberId, event.invitedMemberId)
+        const command = new SendInvitationEmailCommand(event.invitationId, event.initiatingMemberId, event.invitedMemberId)
 
         await this.commandHandler.handle(command)
 
-        await this.postAsIntegrationEvent(event)
+        await this.eventDispatcher.dispatch(event)
       }
     }
     catch(error)
@@ -43,9 +46,9 @@ class InviteConnectionPolicy {
     }
   }
 
-  resolveConnectionRequestedEvent(dynamoDBStreamEvent: DynamoDBStreamEvent)
+  resolveConnectionRequestedEvent(dynamoDBStreamEvent: DynamoDBStreamEvent): ConnectionRequested | undefined
   {
-     let event: ConnectionRequestedEvent | undefined
+     let event: ConnectionRequested | undefined
      const record = dynamoDBStreamEvent.Records[0];
      const {
       // @ts-ignore
@@ -55,57 +58,39 @@ class InviteConnectionPolicy {
   
     if (eventName == "INSERT")
     {
-      const unmarshalledImage = unmarshall(
+      const connectionRequest = unmarshall(
         NewImage as {
           [key: string]: AttributeValue
         }
       )
     
-      event = <ConnectionRequestedEvent>unmarshalledImage
+      event = new ConnectionRequested(connectionRequest.initiatingMemberId, connectionRequest.invitedMemberId, connectionRequest.invitationId)
     }
 
     return event
   }
-
-  async postAsIntegrationEvent(event: ConnectionRequestedEvent) {
-
-    const eventbridge = new EventBridge()
-
-    const params = {
-        Entries: [
-            {
-                Detail: JSON.stringify(event),
-                DetailType: event.constructor.name,
-                EventBusName: process.env.eventBusName,
-                Source: "networking.beantins.com",
-            },
-        ]
-    }
-
-    const result = await eventbridge.putEvents(params).promise()
-  }
 }
 
-class SendConnectionEmailCommandHandler {
+class SendInvitationEmailCommandHandler {
 
   private memberDAO: MemberDAO
-  private emailSender: ConnectionInvitationEmailSender
+  private emailClient: SESClient
 
   public constructor() {
     this.memberDAO = new MemberDAO()
-    this.emailSender = new ConnectionInvitationEmailSender("us-east-1")
+    this.emailClient = new SESClient({ region: process.env.AWS_REGION! })
   }
 
-  async handle(command: SendConnectionEmailCommand) {
+  async handle(command: SendInvitationEmailCommand) {
 
     const sender = await this.memberDAO.load(command.initiatingMemberId)
     const recipient = await this.memberDAO.load(command.invitedMemberId)
 
-    await this.emailSender.sendConnectionInvite(sender!, recipient!, command.invitationId)
+    await this.emailClient.send(InvitationSendEmailCommand.build(sender!, recipient!, command.invitationId, process.env.NotificationEmailAddress!))
   }
 }
 
-class SendConnectionEmailCommand {
+class SendInvitationEmailCommand {
 
   constructor(invitationId: string, initiatingMemberId: string, invitedMemberId: string){
     this.invitationId = invitationId
@@ -118,7 +103,6 @@ class SendConnectionEmailCommand {
   invitedMemberId: string
 }
 
-class ConnectionRequestedEventResolveError extends Error{}
 
 
      

@@ -1,21 +1,19 @@
-import  { EventBridge } from "aws-sdk"
-import AWS from "aws-sdk"
+import  { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge"
 import logger from "./component-test-logger"
 
 export class TestEventPublisher {
-  private eventbridge: EventBridge
+  private eventbridge: EventBridgeClient
   private eventBusName: string
 
   constructor(region: string)
   {
-    AWS.config.update({region: region})
-    this.eventbridge = new EventBridge()
+    this.eventbridge = new EventBridgeClient({region: region})
     this.eventBusName = process.env.MembershipEventBusFakeArn!
   }
 
   async activateMember(name: string, email: string, id: string | null)
   {
-    const params: EventBridge.PutEventsRequest = {
+    const params = {
     Entries: [
       {
         Detail: JSON.stringify({name: name, email: email, id: id}),
@@ -29,7 +27,7 @@ export class TestEventPublisher {
     try
     {
        logger.verbose("post MemberActivatedEvent - " + JSON.stringify(params))
-       const result = await this.eventbridge.putEvents(params).promise()
+       const result = await this.eventbridge.send(new PutEventsCommand(params))
        logger.verbose("post MemberActivatedEvent successfully - " + JSON.stringify(result))
     }
     catch(error)
