@@ -9,6 +9,8 @@
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
+    "test:component:conreq": "export filter=\"@connectionrequest\";jest --projects jest.component.config.ts",
+    "test:component:conres": "export filter=\"@connectionresponse and @business\";jest --projects jest.component.config.ts",
     "test:component:fast": "export filter=\"not @slow\";jest --projects jest.component.config.ts",
     "test:component:slow": "export filter=\"@slow\";jest --projects jest.component.config.ts",
     "test:component": "jest --projects jest.component.config.ts",

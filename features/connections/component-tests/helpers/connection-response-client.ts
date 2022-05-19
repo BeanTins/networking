@@ -1,7 +1,7 @@
 import got from "got"
 import logger from "./component-test-logger"
 
-export async function connectionResponse(invitationId: string | null, decision: string, idToken: string | undefined)
+export async function connectionResponse(invitationId: string, decision: string, idToken: string | undefined)
 {
     let responseBody: any = {}
 
@@ -11,10 +11,14 @@ export async function connectionResponse(invitationId: string | null, decision: 
 
         logger.verbose("Response connection at url - " + url)
 
+        let headers = {}
+        if (idToken != undefined)
+        {
+            headers = {Authorization: "Bearer " + idToken}
+        }
+        
         responseBody = await got.post(url!, {
-            headers: {
-                Authorization: "Bearer " + idToken
-            },
+            headers: headers,
             throwHttpErrors: false,
             responseType: "json"
         })
@@ -31,5 +35,6 @@ export async function connectionResponse(invitationId: string | null, decision: 
 
 function buildUrl(urlBase: string, invitationId: string, decision: string)
 {
+    logger.verbose(urlBase)
     return urlBase.replace("{invitationId}", invitationId).replace("{decision}", decision)
 }

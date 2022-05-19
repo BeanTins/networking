@@ -54,6 +54,7 @@ async request(responseDTO: any) {
     catch (error) {
 
       const statusCodeMap = new Map<any, number>([
+        [UnknownDecision, 400]
       ])
 
       logger.error(error)
@@ -83,9 +84,13 @@ export class ResponseCommandHandler {
       {
         await this.connectionDAO.add(connectionRequest.initiatingMemberId, connectionRequest.invitedMemberId) 
       }
-      else
+      else if (command.decision == "reject")
       {
         await this.connectionRequestDAO.remove(command.invitationId)
+      }
+      else
+      {
+        throw new UnknownDecision("response for invitation " + command.invitationId + " failed due to unknown decision: " + command.decision)
       }
     }
     return command.decision
@@ -98,5 +103,5 @@ export class ResponseCommand {
   decision: "approve"|"reject"
 }
 
-  
+ class UnknownDecision extends Error{}
   

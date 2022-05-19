@@ -18,7 +18,7 @@ interface MemberDetails {id: string | null, name : string | null, email: string 
 const EmptyMemberDetails: MemberDetails = {id: null, name: null, email: null}
 enum EmailRole {Sender, Receiver}
 const AWS_REGION = "us-east-1"
-
+4
 let BeanTinsEmail: string
 let responseCode: number
 let responseMessage: string
@@ -90,10 +90,13 @@ beforeEach(async () => {
   const currentTestName = expect.getState().currentTestName
 
   console.log("Running test: " + currentTestName)
+  logger.verbose("*** Running test - " + currentTestName + " ***")
   jest.setTimeout(getTestTimeout(currentTestName))
   
   initiatingMember = EmptyMemberDetails
   invitedMember = EmptyMemberDetails
+  responseCode = 0
+  responseMessage = ""
   await Promise.all([
     memberCredentials.clear(), 
     memberProjection.clear(), 
@@ -121,6 +124,15 @@ export const connectionSteps: StepDefinitions = ({ given, and, when, then }) => 
     initiatingMember = buildMemberDetails(memberName, EmailRole.Sender)
 
     await eventPublisher.activateMember(initiatingMember.name!, initiatingMember.email!, initiatingMember.id)  
+
+    failureResponse = "Unauthorized"
+    failureCode = 401
+  })
+
+  given(/an unauthorized invited member ([\w\s]+)/, async (memberName: string) => {
+    invitedMember = buildMemberDetails(memberName, EmailRole.Sender)
+
+    await eventPublisher.activateMember(invitedMember.name!, invitedMember.email!, invitedMember.id)  
 
     failureResponse = "Unauthorized"
     failureCode = 401
@@ -167,6 +179,12 @@ export const connectionSteps: StepDefinitions = ({ given, and, when, then }) => 
     await sendConnectionResponse("reject")
   })
 
+  when(/a decision-less connection response occurs/, async () => {
+    failureResponse = "response for invitation " + invitationId + " failed due to unknown decision: unknown"
+    failureCode=400
+    await sendConnectionResponse("unknown")
+  })
+
   when(/afterwards ([\w\s]+) is confirmed as a member/, async (memberName) => {
     await eventPublisher.activateMember(initiatingMember.name!, initiatingMember.email!, initiatingMember.id)  
     expect(await memberProjection.waitForMembersToBeStored([initiatingMember.name!, invitedMember.name!])).toBe(true)
@@ -196,7 +214,7 @@ export const connectionSteps: StepDefinitions = ({ given, and, when, then }) => 
     expect(await memberProjection.waitForMembersToBeStored([initiatingMember.name!])).toBe(true)
   })
 
-  then(/their invitation request fails/, () => {
+  then(/a failure response occurs/, () => {
     expect(responseCode).toBe(failureCode)
     expect(responseMessage).toBe(failureResponse)
   })
@@ -232,8 +250,8 @@ async function retrieveConnectionAddedEvent(): Promise<ConnectionAdded>
   return response!.data as ConnectionAdded
 }
 
-async function sendConnectionResponse(decision: "approve"|"reject") {
-  const idToken = await memberCredentials.requestIdToken(initiatingMember.email!, "p@ssw0rd")
+async function sendConnectionResponse(decision: "approve"|"reject"|"unknown") {
+  let idToken = await memberCredentials.requestIdToken(invitedMember.email!, "p@ssw0rd")
 
   logger.verbose("id token  " + idToken)
   const response = await connectionResponse(invitationId, decision, idToken)
