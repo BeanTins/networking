@@ -91,6 +91,31 @@ test("request body with string parameter min length", () => {
   }
 })
 
+test("request body with string array parameter", () => {
+  let endpoint = specBuilder.withEndpoint("/member/signup", HttpMethod.Post)
+
+  endpoint.withRequestBodyArrayProperty({name: "ids", type: "string"})
+
+  spec = specBuilder.build()
+
+  const idsProperty: any = spec["paths"]["/member/signup"]["post"]["requestBody"]!["content"]!["application/json"]["schema"]!["properties"]!["ids"]
+
+  expect(idsProperty["type"]).toBe("array")  
+  expect(idsProperty["items"]["type"]).toBe("string")  
+})
+
+test("request body with string set parameter", () => {
+  let endpoint = specBuilder.withEndpoint("/member/signup", HttpMethod.Post)
+
+  endpoint.withRequestBodySetProperty({name: "ids", type: "string"})
+
+  spec = specBuilder.build()
+
+  const idsProperty: any = spec["paths"]["/member/signup"]["post"]["requestBody"]!["content"]!["application/json"]["schema"]!["properties"]!["ids"]
+
+  expect(idsProperty["items"]["uniqueItems"]).toBe(true)  
+})
+
 test("string path parameter defined", () => {
   let endpoint = specBuilder.withEndpoint("/connection/approve", HttpMethod.Post)
 

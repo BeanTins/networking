@@ -5,7 +5,7 @@ import { BeanTinsCredentials, StoreType} from "../../credentials/infrastructure/
 import { MembershipEventBusFake } from "../features/connections/component-tests/helpers/membership-event-bus-fake"
 import { NetworkingStage } from "./networking-stage"
 import { EmailListenerStack } from "../features/connections/component-tests/helpers/email-listener-stack"
-import { EventListenerStack } from "../features/connections/component-tests/helpers/event-listener-stack"
+import { EventListenerStack } from "../test-helpers/event-listener-stack"
 import { StageParameters } from "../infrastructure/stage-parameters"
 
 async function main(): Promise<void> 
@@ -20,7 +20,7 @@ async function main(): Promise<void>
     storeTypeForSettings: StoreType.Output 
   })
 
-    const membershipEventBus = new MembershipEventBusFake(app, "NetworkingDev-MembershipEventBusFake", {
+  const membershipEventBus = new MembershipEventBusFake(app, "NetworkingDev-MembershipEventBusFake", {
     stageName: "dev",
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION }
   })

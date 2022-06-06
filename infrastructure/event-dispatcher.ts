@@ -1,5 +1,5 @@
 import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge"
-import logger from "./logger"
+import logger from "./lambda-logger"
 
 export class EventDispatcher{
     private client: EventBridgeClient
@@ -11,10 +11,11 @@ export class EventDispatcher{
     async dispatch(event: any) {
 
       const eventName = event.constructor.name
+
       const params = {
           Entries: [
           {
-            Detail: JSON.stringify(event),
+            Detail: JSON.stringify(event, (key, value) => value instanceof Set ? [...value]: value),
             DetailType: eventName,
             EventBusName: process.env.EventBusName,
             Source: "networking.beantins.com",
@@ -23,7 +24,7 @@ export class EventDispatcher{
      }
 
      try{
-       const result = await this.client.send(new PutEventsCommand(params))
+       await this.client.send(new PutEventsCommand(params))
      }
      catch(error)
      {

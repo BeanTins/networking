@@ -1,4 +1,4 @@
-import { DataMapperFactory } from "../infrastructure/data-mapper-factory"
+import { DataMapperFactory } from "../../../infrastructure/data-mapper-factory"
 import { DataMapper} from "@aws/dynamodb-data-mapper"
 
 import {
@@ -38,7 +38,9 @@ export class MemberDAO
 
   async save(member: Member)
   {
-    return await this.dataMapper.put(member)
+    const result = await this.dataMapper.put(member)
+
+    return result
   }
 
   async load(id: string): Promise<Member|null>

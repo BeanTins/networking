@@ -62,6 +62,18 @@ class IntegerPropertyDefinition {
    type: string
 }
 
+class ArrayItemsDefinition {
+   type: string
+   uniqueItems?: boolean
+}
+
+class ArrayPropertyDefinition {
+
+   items: ArrayItemsDefinition
+   type: string
+}
+
+
 export interface OpenAPIExtension{
    name: string
    content: any
@@ -77,13 +89,17 @@ export class StringProperty extends Property{
    maxLength?: number
 }
 
+export class ArrayProperty extends Property{
+   type: "string"
+}
+
 export class Parameter {
    name: string
    description: string
    enum?: string[]
 }
 
-type NamedProperty = Record<string, StringPropertyDefinition|IntegerPropertyDefinition>
+type NamedProperty = Record<string, StringPropertyDefinition|IntegerPropertyDefinition|ArrayPropertyDefinition>
 
 export class EndpointBuilder{
 
@@ -141,47 +157,61 @@ export class EndpointBuilder{
 
    withRequestBodyStringProperty(param: StringProperty)
    {
-      if (this.endpoint.requestBody == undefined)
+      this.withProperty(param, "string")
+
+      if (param.minLength != undefined)
       {
-         this.endpoint.requestBody = {required: true}
+         (this.endpoint.requestBody!.content![ContentType.JSON].schema!.properties![param.name] as StringPropertyDefinition).minLength = param.minLength
       }
 
-      if (this.endpoint.requestBody.content == undefined)
+      if (param.maxLength != undefined)
       {
+         (this.endpoint.requestBody!.content![ContentType.JSON].schema!.properties![param.name] as StringPropertyDefinition).maxLength = param.maxLength
+      }
+      
+   }
+
+   withRequestBodySetProperty(param: ArrayProperty)
+   {
+      this.withRequestBodyArrayProperty(param)
+      const property: ArrayPropertyDefinition = <ArrayPropertyDefinition>this.endpoint.requestBody!.content![ContentType.JSON].schema!.properties![param.name]
+      property.items.uniqueItems = true
+   }
+
+   withRequestBodyArrayProperty(param: ArrayProperty)
+   {
+      this.withProperty(param, "array")
+
+      const property: ArrayPropertyDefinition = <ArrayPropertyDefinition>this.endpoint.requestBody!.content![ContentType.JSON].schema!.properties![param.name]
+      property.items = {type: param.type}
+   }
+
+   private withProperty(param: Property, type: "array"|"string") {
+      if (this.endpoint.requestBody == undefined) {
+         this.endpoint.requestBody = { required: true }
+      }
+
+      if (this.endpoint.requestBody.content == undefined) {
          this.endpoint.requestBody.content = {
             [ContentType.JSON]: {
-               schema: {type: "object"}
+               schema: { type: "object" }
             }
          }
       }
 
-      if (this.endpoint.requestBody.content[ContentType.JSON].schema!.properties == undefined)
-      {
+      if (this.endpoint.requestBody.content[ContentType.JSON].schema!.properties == undefined) {
          this.endpoint.requestBody.content[ContentType.JSON].schema!.properties = {}
       }
 
-      this.endpoint.requestBody.content[ContentType.JSON].schema!.properties![param.name] = {type: "string"}
+      this.endpoint.requestBody.content[ContentType.JSON].schema!.properties![param.name] = { type: type }
 
-      if (param.required)
-      {
-         if (this.endpoint.requestBody.content[ContentType.JSON].schema!.required == undefined)
-         {
+      if (param.required) {
+         if (this.endpoint.requestBody.content[ContentType.JSON].schema!.required == undefined) {
             this.endpoint.requestBody.content[ContentType.JSON].schema!.required = []
          }
 
          this.endpoint.requestBody.content[ContentType.JSON].schema!.required?.push(param.name)
       }
-
-      if (param.minLength != undefined)
-      {
-         (this.endpoint.requestBody.content[ContentType.JSON].schema!.properties![param.name] as StringPropertyDefinition).minLength = param.minLength
-      }
-
-      if (param.maxLength != undefined)
-      {
-         (this.endpoint.requestBody.content[ContentType.JSON].schema!.properties![param.name] as StringPropertyDefinition).maxLength = param.maxLength
-      }
-      
    }
 
    build(): EndpointDefinition{

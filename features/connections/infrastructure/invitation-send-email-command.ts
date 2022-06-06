@@ -1,6 +1,6 @@
 import { Member } from "./member-dao";
 import { SendEmailCommand } from "@aws-sdk/client-ses"
-import logger from "./logger"
+import logger from "../../../infrastructure/lambda-logger"
 
 export class InvitationSendEmailCommand {
 

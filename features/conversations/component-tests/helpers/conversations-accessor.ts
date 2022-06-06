@@ -1,27 +1,27 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
-import { DynamoDBDocumentClient, ScanCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb"
-import logger from "./component-test-logger"
+import { DynamoDBDocumentClient, ScanCommand, DeleteCommand, PutCommand } from "@aws-sdk/lib-dynamodb"
+import logger from "../../../../test-helpers/component-test-logger"
 
-export class ConnectionsAccessor {
+export class ConversationsAccessor {
   
   private dynamoDB: DynamoDBDocumentClient
-  private connectionsTableName: string
+  private conversationsTableName: string
 
   constructor(region: string)
   {
     const client = new DynamoDBClient({region: region})
     this.dynamoDB = DynamoDBDocumentClient.from(client)
-    this.connectionsTableName = process.env.ConnectionsTable!
+    this.conversationsTableName = process.env.ConversationsTable!
   }
 
   async clear()
   {
     const queryTableName = {
-        TableName: this.connectionsTableName
+        TableName: this.conversationsTableName
     }
     
     const items =  await this.dynamoDB.send(new ScanCommand(queryTableName))
-    const tableName = this.connectionsTableName
+    const tableName = this.conversationsTableName
     const dynamoDB = this.dynamoDB
   
     if (items.Items) {
@@ -29,10 +29,10 @@ export class ConnectionsAccessor {
   
           var record = {
               TableName: tableName,
-              Key: {"memberId": item["memberId"]}
+              Key: {"id": item["id"]}
           };
   
-          logger.verbose("Clearing connections - " + JSON.stringify(record))
+          logger.verbose("Clearing conversations - " + JSON.stringify(record))
           
           try
           {
@@ -45,5 +45,4 @@ export class ConnectionsAccessor {
       }
     }
   } 
-
 }

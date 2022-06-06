@@ -1,5 +1,5 @@
 import got from "got"
-import logger from "./component-test-logger"
+import logger from "../../../../test-helpers/component-test-logger"
 
 export async function requestConnection(intiatingMemberId: string | null, invitedMemberId: string | null, idToken: string | undefined)
 {

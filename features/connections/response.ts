@@ -3,8 +3,8 @@ import { APIGatewayEvent, Context, APIGatewayProxyResult } from "aws-lambda"
 import { OpenAPISpecBuilder, HttpMethod} from "../../infrastructure/open-api-spec"
 import { ConnectionRequestDAO } from "./infrastructure/connection-request-dao"
 import { ConnectionsDAO } from "./infrastructure/connections-dao"
-import { HttpResponse } from "./infrastructure/http-response"
-import logger  from "./infrastructure/logger"
+import { HttpResponse } from "../../infrastructure/http-response"
+import logger  from "../../infrastructure/lambda-logger"
 
 export const specBuilder = function() { 
 
@@ -57,8 +57,6 @@ async request(responseDTO: any) {
         [UnknownDecision, 400]
       ])
 
-      logger.error(error)
-
       response = HttpResponse.error(error, statusCodeMap)
     }
 
@@ -77,21 +75,28 @@ export class ResponseCommandHandler {
   }
 
   async handle(command: ResponseCommand): Promise<"approve" | "reject"> {
-    const connectionRequest = await this.connectionRequestDAO.get(command.invitationId)
-    if(connectionRequest != undefined)
+    try{
+      const connectionRequest = await this.connectionRequestDAO.get(command.invitationId)
+      if(connectionRequest != undefined)
+      {
+        if (command.decision == "approve")
+        {
+          await this.connectionDAO.add(connectionRequest.initiatingMemberId, connectionRequest.invitedMemberId) 
+        }
+        else if (command.decision == "reject")
+        {
+          await this.connectionRequestDAO.remove(command.invitationId)
+        }
+        else
+        {
+          throw new UnknownDecision(command.invitationId, command.decision)
+        }
+      }
+    }
+    catch(error)
     {
-      if (command.decision == "approve")
-      {
-        await this.connectionDAO.add(connectionRequest.initiatingMemberId, connectionRequest.invitedMemberId) 
-      }
-      else if (command.decision == "reject")
-      {
-        await this.connectionRequestDAO.remove(command.invitationId)
-      }
-      else
-      {
-        throw new UnknownDecision("response for invitation " + command.invitationId + " failed due to unknown decision: " + command.decision)
-      }
+      logger.error("Command response failed - " + error)
+      throw error
     }
     return command.decision
   }
@@ -103,5 +108,10 @@ export class ResponseCommand {
   decision: "approve"|"reject"
 }
 
- class UnknownDecision extends Error{}
+ class UnknownDecision extends Error{
+   constructor(invitationId: string, decision: string)
+   {
+     super("response for invitation " + invitationId + " failed due to unknown decision: " + decision)
+   }
+ }
   

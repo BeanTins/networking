@@ -3,6 +3,7 @@ Feature: Request Connection
 
 @business
 @connectionrequest
+@connection
 Scenario: Connection request with missing details is rejected
 Given an initiating member Roger Ramjet
 And no invited member
@@ -11,6 +12,7 @@ Then a failure response occurs
 
 @business
 @connectionrequest
+@connection
 Scenario: Valid connection request leads to invitation
 Given an initiating member Tom Thumb
 And an invited member Biffo the Bear 

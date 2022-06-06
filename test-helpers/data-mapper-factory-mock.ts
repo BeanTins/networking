@@ -109,10 +109,10 @@ export class DataMapperFactoryMock{
 
   resolveDataMapper(item: any, method: string)
   {
-    let itemName = item.name
-    if (itemName == undefined)
+    let itemName = item.constructor.name
+    if ((itemName == undefined) || (itemName == "Function"))
     {
-      itemName = item.constructor.name
+      itemName = item.name
     }
     if (itemName == undefined)
     {
@@ -123,7 +123,7 @@ export class DataMapperFactoryMock{
 
     if (dataMapper == undefined)
     {
-      throw Error("no datamapper found for " + JSON.stringify(item) + method)
+      throw Error("no datamapper found for type " + item.constructor.name + " with values " +JSON.stringify(item) + method)
     }
     return dataMapper
   }

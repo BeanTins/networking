@@ -3,10 +3,10 @@ import { unmarshall } from "@aws-sdk/util-dynamodb"
 import { AttributeValue} from "@aws-sdk/client-dynamodb"
 import { ConnectionRequested } from "./domain/events"
 import { MemberDAO } from "./infrastructure/member-dao"
-import logger from "./infrastructure/logger"
+import logger from "../../infrastructure/lambda-logger"
 import { InvitationSendEmailCommand } from "./infrastructure/invitation-send-email-command"
 import { SESClient } from "@aws-sdk/client-ses"
-import { EventDispatcher } from "./infrastructure/event-dispatcher"
+import { EventDispatcher } from "../../infrastructure/event-dispatcher"
 
 export const lambdaHandler = async (event: DynamoDBStreamEvent, context: Context): Promise<any> => {
 

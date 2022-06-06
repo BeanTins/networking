@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, ScanCommand, DeleteCommand, PutCommand } from "@aws-sdk/lib-dynamodb"
-import logger from "./component-test-logger"
+import logger from "../../../../test-helpers/component-test-logger"
 
 export class ConnectionRequestAccessor {
   

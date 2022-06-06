@@ -14,6 +14,8 @@ export class ConnectionsTable extends EnvvarsStack {
     super(scope, id, props)
     this.connections = new Table(this, "Table", {
       partitionKey: { name: "memberId", type: AttributeType.STRING },
+      readCapacity: 1,
+      writeCapacity: 2,
       removalPolicy: RemovalPolicy.DESTROY,
       stream: StreamViewType.NEW_AND_OLD_IMAGES,
     })

@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, ScanCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb"
-import logger from "./component-test-logger"
+import logger from "../../../../test-helpers/component-test-logger"
 
 export class MemberProjectionAccessor {
   
@@ -37,7 +37,7 @@ export class MemberProjectionAccessor {
           
           try
           {
-              await dynamoDB.send(new DeleteCommand(memberRecord))
+              logger.verbose(JSON.stringify(await dynamoDB.send(new DeleteCommand(memberRecord))))
           }
           catch(error)
           {
@@ -47,16 +47,16 @@ export class MemberProjectionAccessor {
     }
   } 
 
-  async waitForMembersToBeStored(nameList: String[], retries: number = 3, retryWaitInMillisecs = 500): Promise<boolean>
+  async waitForMembersToBeStored(nameList: String[], retries: number = 4, retryWaitInMillisecs = 500): Promise<boolean>
   {
     let memberPresent: boolean = false
 
-    var nameObject: any = {};
+    var nameObject: any = {}
     var index = 0;
     nameList.forEach(function(value) {
         index++;
-        var titleKey = ":name"+index;
-        nameObject[titleKey.toString()] = value;
+        var titleKey = ":name"+index
+        nameObject[titleKey.toString()] = value
     });
     
     var params = {

@@ -1,14 +1,19 @@
 import { lambdaHandler } from "../response"
 import { APIGatewayEvent, Context,APIGatewayProxyResult  } from "aws-lambda"
-import { DataMapperFactoryMock, DataMapperMock} from "./helpers/data-mapper-factory-mock"
-import { DataMapperFactory } from "../infrastructure/data-mapper-factory"
+import { DataMapperFactoryMock, DataMapperMock} from "../../../test-helpers/data-mapper-factory-mock"
+import { DataMapperFactory } from "../../../infrastructure/data-mapper-factory"
 import { Member } from "../infrastructure/member-dao"
 import { ConnectionRequest} from "../infrastructure/connection-request-dao"
 import { LambdaEventBuilder } from "./helpers/lambda-event-builder"
 import {mockClient} from "aws-sdk-client-mock"
 import {DynamoDBDocumentClient, TransactWriteCommand} from "@aws-sdk/lib-dynamodb"
 
-const dynamoMock = mockClient(DynamoDBDocumentClient);
+const loggerVerboseMock = jest.fn()
+const loggerErrorMock = jest.fn()
+jest.mock("../../../infrastructure/lambda-logger", () => ({ verbose: (message: string) => loggerVerboseMock(message), 
+  error: (message: string) => loggerErrorMock(message) }))
+
+const dynamoMock = mockClient(DynamoDBDocumentClient)
 let event: APIGatewayEvent, context: Context
 let members: DataMapperMock
 let connectionRequests: DataMapperMock
@@ -25,6 +30,8 @@ beforeEach(() => {
 
     process.env.ConnectionsTable = "ConnectionsTable"
 })
+
+"response for invitation dc4bff61-cc5f-44c6-8e11-b36e099f3785 failed due to unknown decision: unknown"
 
 test("approved connection response", async () => {
 
@@ -48,6 +55,20 @@ test("rejected connection response", async () => {
   const result:APIGatewayProxyResult = await whenConnectionResponse("1234", "reject")
 
   expect(result.statusCode).toBe(200)
+})
+
+test("connection response fails if decision type is unknown", async () => {
+
+  members.querySequenceResponses([[Member.create("Barney Rubble", "brubble@hotmail.com", "5678")],
+                                  [Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")]])
+
+  connectionRequests.get.mockReturnValue({invitationId: "1234", initiatingMemberId: "5678", invitedMemberId: "9012"})
+  
+  const result:APIGatewayProxyResult = await whenConnectionResponse("1234", "maybe")
+
+  expect(result.statusCode).toBe(400)
+  expect(result.body).toEqual(JSON.stringify({message: "unknown decision"}))
+  expect(loggerErrorMock).toBeCalledWith("Command response failed - Error: response for invitation 1234 failed due to unknown decision: maybe")
 })
 
 test("rejected connection removes request", async () => {
@@ -89,7 +110,7 @@ test("after approved connection both members have each other as connection", asy
   )
 })
 
-async function whenConnectionResponse(invitationId: string|null, decision: "approve"|"reject"){
+async function whenConnectionResponse(invitationId: string|null, decision: string){
 
   event = new LambdaEventBuilder().withPathParameters({invitationId: invitationId, decision: decision}).build()
 

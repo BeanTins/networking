@@ -57,7 +57,7 @@ export class EventListenerClient {
       }   
       const command = new ReceiveMessageCommand(params)
 
-      logger.verbose("event listener queue command - " + command)
+      logger.verbose("event listener queue command - " + JSON.stringify(command))
 
       let currentType: string | undefined
       let response: ReceiveMessageResult
@@ -85,7 +85,7 @@ export class EventListenerClient {
     }
     catch(error)
     {
-      logger.error("Failed to receive email event -  " + error)
+      logger.error("Failed to receive event -  " + error)
       throw error
     }
 

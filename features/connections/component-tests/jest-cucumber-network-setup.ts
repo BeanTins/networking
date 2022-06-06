@@ -9,6 +9,6 @@ if (process.env.filter != undefined)
 {
     options = {tagFilter: process.env.filter}
 }
-const features = loadFeatures("**/*.feature", options)
+const features = loadFeatures("**/connections/**/*.feature", options)
 autoBindSteps(features, [ connectionSteps ]);
 

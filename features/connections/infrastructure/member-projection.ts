@@ -2,7 +2,7 @@ import {Table, AttributeType} from "aws-cdk-lib/aws-dynamodb"
 import { StackProps, RemovalPolicy, CfnOutput } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import {IPrincipal} from "aws-cdk-lib/aws-iam"
-import {EnvvarsStack} from "./envvars-stack" 
+import {EnvvarsStack} from "../../../provisioning/envvars-stack" 
 
 interface MemberProjectionProps extends StackProps {
   stageName: string;
@@ -14,6 +14,8 @@ export class MemberProjection extends EnvvarsStack {
     super(scope, id, props)
     this.memberProjection = new Table(this, "Table", {
       partitionKey: { name: "id", type: AttributeType.STRING },
+      readCapacity: 1,
+      writeCapacity: 1,
       removalPolicy: RemovalPolicy.DESTROY,
     })
 

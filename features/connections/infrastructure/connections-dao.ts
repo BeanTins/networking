@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, TransactWriteCommand, QueryCommand } from "@aws-sdk/lib-dynamodb"
-import logger from "./logger"
+import logger from "../../../infrastructure/lambda-logger"
 
 export class Connection {
   public memberId: string

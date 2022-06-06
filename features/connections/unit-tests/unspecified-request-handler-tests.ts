@@ -1,7 +1,7 @@
 import { lambdaHandler } from "../unspecified-request-handler"
 import { EventBridgeEvent, Context,APIGatewayProxyResult  } from "aws-lambda"
-import { DataMapperFactoryMock, DataMapperMock} from "./helpers/data-mapper-factory-mock"
-import { DataMapperFactory } from "../infrastructure/data-mapper-factory"
+import { DataMapperFactoryMock, DataMapperMock} from "../../../test-helpers/data-mapper-factory-mock"
+import { DataMapperFactory } from "../../../infrastructure/data-mapper-factory"
 import { Member } from "../infrastructure/member-dao"
 import { ConnectionRequest} from "../infrastructure/connection-request-dao"
 
@@ -10,7 +10,7 @@ let members: DataMapperMock
 let connections: DataMapperMock
 
 const mockUUid = jest.fn()
-jest.mock('uuid', () => ({ v4: () => mockUUid() }))
+jest.mock("uuid", () => ({ v4: () => mockUUid() }))
 
 beforeEach(() => {
     jest.clearAllMocks()

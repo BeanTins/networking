@@ -29,14 +29,14 @@ function buildTransports() {
   let transportList
   if (runningInLambda) {
     transportList = [
-      new transports.Console({ level: "info", format: consoleFormat })
+      new transports.Console({ level: "verbose", format: consoleFormat })
     ]
   }
 
   else {
     transportList = [
-      new transports.Console({ level: "info", format: consoleFormat }),
-      new transports.File({ filename: path.join(__dirname, "../../../reports/unit-tests/tests.log"), level: "verbose", format: fileFormat })
+      new transports.Console({ level: "verbose", format: consoleFormat }),
+      new transports.File({ filename: path.join(__dirname, "../reports/unit-tests/tests.log"), level: "verbose", format: fileFormat })
     ]
   }
   return transportList

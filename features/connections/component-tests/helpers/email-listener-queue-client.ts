@@ -5,7 +5,7 @@ import  { SQSClient,
   ReceiveMessageResult,
   DeleteMessageCommand,
 PurgeQueueCommand } from "@aws-sdk/client-sqs"
-import logger from "./component-test-logger"
+import logger from "../../../../test-helpers/component-test-logger"
 
 export interface EventResponse
 {

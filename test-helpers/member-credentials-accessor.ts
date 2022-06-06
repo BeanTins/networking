@@ -120,6 +120,7 @@ export class MemberCredentialsAccessor {
         Password: password
       }
   
+      logger.verbose("Signup " + email + " with password " + password)
       await this.client.send(new SignUpCommand(params))
     }
     catch(error)

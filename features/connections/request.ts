@@ -3,9 +3,10 @@ import { APIGatewayEvent, Context, APIGatewayProxyResult } from "aws-lambda"
 import { OpenAPISpecBuilder, HttpMethod} from "../../infrastructure/open-api-spec"
 import { MemberDAO } from "./infrastructure/member-dao"
 import { ConnectionRequestDAO, ConnectionRequest } from "./infrastructure/connection-request-dao"
-import { HttpResponse } from "./infrastructure/http-response"
-import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge"
-import logger  from "./infrastructure/logger"
+import { HttpResponse } from "../../infrastructure/http-response"
+import logger  from "../../infrastructure/lambda-logger"
+import { EventDispatcher } from "../../infrastructure/event-dispatcher"
+import { UnspecifiedConnectionRequest} from "./infrastructure/events"
 
 export const specBuilder = function() { 
 
@@ -62,10 +63,12 @@ export class RequestCommandHandler {
 
   private memberDAO: MemberDAO
   private connectionRequestDAO: ConnectionRequestDAO
+  private dispatcher: EventDispatcher
 
   public constructor() {
     this.memberDAO = new MemberDAO()
     this.connectionRequestDAO = new ConnectionRequestDAO()
+    this.dispatcher = new EventDispatcher(process.env.AWS_REGION!)
   }
 
   async handle(command: RequestCommand) {
@@ -78,25 +81,8 @@ export class RequestCommandHandler {
     {
       const event = new UnspecifiedConnectionRequest(command.initiatingMemberId, command.invitedMemberId)
 
-      await this.publishEvent(event)     
+      await this.dispatcher.dispatch(event)     
     }
-  }
-
-  private async publishEvent(event: UnspecifiedConnectionRequest) {
-    const eventbridge = new EventBridgeClient({region: process.env.AWS_REGION!})
-
-    const params = {
-      Entries: [
-        {
-          Detail: JSON.stringify(event),
-          DetailType: event.constructor.name,
-          EventBusName: process.env.EventBusName,
-          Source: "networking.beantins.com",
-        },
-      ]
-    }
-
-    const result = await eventbridge.send(new PutEventsCommand(params))
   }
 }
 
@@ -105,15 +91,5 @@ export class RequestCommand {
   invitedMemberId: string
 }
 
-class UnspecifiedConnectionRequest{
-  initiatingMemberId: string
-  invitedMemberId: string
-
-  constructor(initiatingMemberId: string, invitedMemberId: string)
-  {
-    this.initiatingMemberId = initiatingMemberId
-    this.invitedMemberId = invitedMemberId
-  }
-}
   
   

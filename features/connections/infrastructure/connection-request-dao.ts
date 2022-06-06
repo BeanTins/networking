@@ -1,5 +1,5 @@
 import { DataMapper } from "@aws/dynamodb-data-mapper"
-import { DataMapperFactory } from "../infrastructure/data-mapper-factory"
+import { DataMapperFactory } from "../../../infrastructure/data-mapper-factory"
 import { v4 as uuidv4 } from "uuid"
 import {
   attribute,
@@ -49,7 +49,7 @@ export class ConnectionRequestDAO
     await this.dataMapper.delete(toDelete)
   }
 
-  async get(invitationId: string): Promise<ConnectionRequest|undefined>  
+  async get(invitationId: string): Promise<ConnectionRequest>  
   {
     const toGet = new ConnectionRequest()
     toGet.invitationId = invitationId
@@ -73,7 +73,7 @@ export class ConnectionRequestDAO
     return invitationId
   }
 
-  async exists(invitationId: string): Promise<boolean|null>
+  async exists(invitationId: string): Promise<boolean>
   {
     let connectionExists: boolean = false
     const matchingItemIterator = this.dataMapper.query(ConnectionRequest, 
