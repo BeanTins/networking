@@ -25,7 +25,7 @@ export class StartedPublisherStack extends Stack {
       environment: {EventBusName: props.eventBusName},
       memorySize: 1024,
       timeout: Duration.seconds(5),
-      runtime: Runtime.NODEJS_14_X,
+      runtime: Runtime.NODEJS_16_X,
       handler: "lambdaHandler",
       entry: path.join(__dirname, "started-publisher.ts"),
     })

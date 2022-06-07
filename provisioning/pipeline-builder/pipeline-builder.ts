@@ -45,7 +45,7 @@ export class PipelineBuilder {
       throw("pipeline must have a commit stage")
     }
     
-    return new PipelineStack(this.app, this.stageFactory, "PipelineStack", 
+    return new PipelineStack(this.app, this.stageFactory, this.name, 
     {name: this.name, 
       commitStage: this.commitStage, 
       acceptanceStage: this.acceptanceStage,

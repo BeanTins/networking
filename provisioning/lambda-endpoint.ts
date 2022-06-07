@@ -31,7 +31,7 @@ export class LambdaEndpoint extends EnvvarsStack {
     this.lambda = new NodejsFunction(this, this.buildConstructName("Function", props), {
       memorySize: 1024,
       timeout: Duration.seconds(5),
-      runtime: Runtime.NODEJS_14_X,
+      runtime: Runtime.NODEJS_16_X,
       handler: "lambdaHandler",
       entry: props.entry,
       environment: props.environment

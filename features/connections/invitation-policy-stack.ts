@@ -38,7 +38,7 @@ export class InvitationPolicyStack extends Stack {
       environment: environment,
       memorySize: 1024,
       timeout: Duration.seconds(5),
-      runtime: Runtime.NODEJS_14_X,
+      runtime: Runtime.NODEJS_16_X,
       handler: "lambdaHandler",
       entry: path.join(__dirname, "invitation-policy.ts"),
     })

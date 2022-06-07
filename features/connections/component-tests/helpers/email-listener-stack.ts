@@ -19,7 +19,7 @@ export class EmailListenerStack extends Stack {
   constructor(scope: Construct, id: string, props: EmailListenerProps) {
     super(scope, id, props)
 
-    this.ConfigSetName = "defaultConfigSet"
+    this.ConfigSetName = "defaultConfigSet" + props.stageName
 
     const sesPolicy = this.buildAccessPolicy()
 

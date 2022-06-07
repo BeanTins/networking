@@ -6,7 +6,6 @@ import { Bucket } from "aws-cdk-lib/aws-s3"
 import { StageFactory } from "./stage-factory"
 import { DeploymentStage } from "./deployment-stage"
 import { Role, ServicePrincipal, PolicyStatement, Effect } from "aws-cdk-lib/aws-iam"
-import { PropagatedTagSource } from "aws-cdk-lib/aws-ecs"
 
 export enum SCM {
   GitHub = 1
@@ -88,14 +87,14 @@ export class PipelineStack extends Stack {
 
     const pipeline = new CodePipeline(this, "Pipeline", {
       pipelineName: props.name,
-      synth: this.buildCommitStageStep(props.commitStage)
+      synth: this.buildCommitStageStep(props.name, props.commitStage)
     })
 
     if (props.acceptanceStage != undefined){
 
       const acceptanceDeploymentStage = this.stageFactory.create(this, "AcceptanceTest", "test", props.acceptanceStage.withCustomDefinitions)
     
-      const buildStep = this.buildAcceptanceStageStep(props.acceptanceStage, acceptanceDeploymentStage)
+      const buildStep = this.buildAcceptanceStageStep(props.name, props.acceptanceStage, acceptanceDeploymentStage)
 
       pipeline.addStage(acceptanceDeploymentStage, { post: [buildStep] })
     }
@@ -103,7 +102,7 @@ export class PipelineStack extends Stack {
     if (props.productionStage != undefined){
       const productionDeploymentStage = this.stageFactory.create(this, "Production", "prod", props.productionStage.withCustomDefinitions)
 
-      const buildStep = this.buildProductionStageStep(props.productionStage)
+      const buildStep = this.buildProductionStageStep(props.name, props.productionStage)
 
       pipeline.addStage(productionDeploymentStage,buildStep)
     }
@@ -111,7 +110,7 @@ export class PipelineStack extends Stack {
     this.actionAnyDeferredPermissionChanges(pipeline)
   }
 
-  private buildProductionStageStep(props: ProductionStageProperties) {
+  private buildProductionStageStep(pipelineName: string, props: ProductionStageProperties) {
     let stepSetup: any = {}
 
     if (props.manualApproval) {
@@ -122,7 +121,7 @@ export class PipelineStack extends Stack {
 
     stepSetup["commands"] = commands
 
-    stepSetup["role"] = this.buildStagePermissionsRole("ProductionExecutionRole",
+    stepSetup["role"] = this.buildStagePermissionsRole(pipelineName + "ProductionExecutionRole",
       props.withPermissionToAccess)
 
     return stepSetup 
@@ -137,7 +136,7 @@ export class PipelineStack extends Stack {
     }
   }
 
-  private buildAcceptanceStageStep(props: AcceptanceStageProperties, deployedInfrastructure: DeploymentStage) {
+  private buildAcceptanceStageStep(pipelineName: string, props: AcceptanceStageProperties, deployedInfrastructure: DeploymentStage) {
 
     let buildStepSetup: any = this.buildStepSetupForSourceCode(props.extractingSourceFrom)
 
@@ -167,7 +166,7 @@ export class PipelineStack extends Stack {
 
     buildStepSetup["commands"] = commands
 
-    buildStepSetup["role"] = this.buildStagePermissionsRole("AcceptanceTestExecutionRole", 
+    buildStepSetup["role"] = this.buildStagePermissionsRole(pipelineName + "AcceptanceTestExecutionRole", 
                                                             props.withPermissionToAccess)
 
     return this.buildBuildStep("AcceptanceTest", buildStepSetup, reportGroup)
@@ -239,7 +238,7 @@ export class PipelineStack extends Stack {
     }
   }
 
-  private buildCommitStageStep(commitStageProps: CommitStageProperties) {
+  private buildCommitStageStep(pipelineName: string, commitStageProps: CommitStageProperties) {
     
     let buildStepSetup: any = this.buildStepSetupForSourceCode(commitStageProps.extractingSourceFrom)
 
@@ -255,7 +254,7 @@ export class PipelineStack extends Stack {
 
     buildStepSetup["commands"] = commands
 
-    buildStepSetup["role"] = this.buildStagePermissionsRole("CommitExecutionRole", 
+    buildStepSetup["role"] = this.buildStagePermissionsRole(pipelineName + "CommitExecutionRole", 
     commitStageProps.withPermissionToAccess)
 
     let reportGroup: ReportGroup | undefined 

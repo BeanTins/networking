@@ -67,10 +67,10 @@ async function main(): Promise<void>
       reporting: {fromDirectory: "reports/component-tests", withFiles: ["test-results.xml", "tests.log"], exportingTo: ExportType.S3},
       exposingEnvVars: true,
       withPermissionToAccess: [
-        {resource: testConfig.memberProjectionTableArn, withAllowableOperations: ["dynamodb:*"]},
-        {resource: testConfig.connectionsTableArn, withAllowableOperations: ["dynamodb:*"]},
-        {resource: testConfig.connectionRequestTableArn, withAllowableOperations: ["dynamodb:*"]},
-        {resource: testConfig.conversationsTableArn, withAllowableOperations: ["dynamodb:*"]},
+        // {resource: testConfig.memberProjectionTableArn, withAllowableOperations: ["dynamodb:*"]},
+        // {resource: testConfig.connectionsTableArn, withAllowableOperations: ["dynamodb:*"]},
+        // {resource: testConfig.connectionRequestTableArn, withAllowableOperations: ["dynamodb:*"]},
+        // {resource: testConfig.conversationsTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.userPoolArn, withAllowableOperations: ["cognito-idp:*"]},
         {resource: Fn.importValue("EventListenerQueueArntest"), withAllowableOperations: ["sqs:*"]},
         {resource: Fn.importValue("EmailListenerQueueArntest"), withAllowableOperations: ["sqs:*"]}
@@ -79,8 +79,7 @@ async function main(): Promise<void>
                               eventListenerQueueArn: Fn.importValue("EventListenerQueueArntest"),
                               membershipEventBusArn: Fn.importValue("MembershipEventBusFakeArntest"),
                               emailConfigurationSet: testResources.emailListenerQueue.ConfigSetName,
-                              notificationEmailAddress: testConfig.notificationEmailAddress,
-                            } 
+                              notificationEmailAddress: testConfig.notificationEmailAddress} 
     }
   )
 
@@ -122,7 +121,7 @@ function provisionTestResources(app: App) {
     storeTypeForSettings: StoreType.Output
   })
 
-  const membershipEventBus = new MembershipEventBusFake(app, "NetworkingDev-MembershipEventBusFake", {
+  const membershipEventBus = new MembershipEventBusFake(app, "NetworkingTest-MembershipEventBusFake", {
     stageName: "test",
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION }
   })
