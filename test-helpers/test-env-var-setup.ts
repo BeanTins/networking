@@ -8,7 +8,6 @@ export class TestEnvVarSetup{
   
     if (process.env[envVarName] == undefined) {
       process.env[envVarBaseName] = TestEnvVarSetup.resolveOutput(envVarName)
-      console.log(process.env[envVarBaseName])
     }
     else {
       process.env[envVarBaseName] = process.env[envVarName]

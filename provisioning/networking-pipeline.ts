@@ -77,7 +77,7 @@ async function main(): Promise<void>
       ],
       withCustomDefinitions: {userPoolArn: testConfig.userPoolArn, 
                               eventListenerQueueArn: Fn.importValue("EventListenerQueueArntest"),
-                              membershipEventBusArn: Fn.importValue("MembershipEventBusFakeArndev"),
+                              membershipEventBusArn: Fn.importValue("MembershipEventBusFakeArntest"),
                               emailConfigurationSet: testResources.emailListenerQueue.ConfigSetName,
                               notificationEmailAddress: testConfig.notificationEmailAddress,
                             } 
@@ -90,12 +90,15 @@ async function main(): Promise<void>
       withPermissionToAccess: [
         {resource: "*", withAllowableOperations: ["ssm:GetParameter"]},
         {resource: prodConfig.userPoolArn, withAllowableOperations: ["cognito-idp:*"]}],
-      withCustomDefinitions: {userPoolArn: prodConfig.userPoolArn} 
+      withCustomDefinitions: {userPoolArn: prodConfig.userPoolArn, 
+                              membershipEventBusArn: Fn.importValue("MembershipEventBusFakeArntest")} // this needs to be the real prod event bus retrieved from parameter store
     }
   )
 
   const pipelineStack = pipeline.build()
+  pipelineStack.addDependency(testResources.membershipEventBus)
   pipelineStack.addDependency(testResources.eventListenerQueue)
+  pipelineStack.addDependency(testResources.emailListenerQueue)
   pipelineStack.addDependency(testResources.beanTinsCredentials)
 
   app.synth()
@@ -134,17 +137,12 @@ function provisionTestResources(app: App) {
 
 async function getTestConfig() : Promise<StageConfiguration>
 {
-  const notificationEmailAddress  = await new StageParameters("us-east-1").retrieve("NotificationEmailAddress")
-  const memberProjectionTableArn = Fn.importValue("MemberProjectionArntest")
-  const connectionRequestTableArn = Fn.importValue("ConnectionRequestTableArntest")
-  const connectionsTableArn = Fn.importValue("ConnectionsTableArntest")
-  const conversationsTableArn = Fn.importValue("ConversationsTableArntest")
-  return {memberProjectionTableArn: memberProjectionTableArn,
-          connectionRequestTableArn: connectionRequestTableArn,
-          connectionsTableArn: connectionsTableArn,
-          conversationsTableArn: conversationsTableArn,
+  return {memberProjectionTableArn: Fn.importValue("MemberProjectionArntest"),
+          connectionRequestTableArn: Fn.importValue("ConnectionRequestTableArntest"),
+          connectionsTableArn: Fn.importValue("ConnectionsTableArntest"),
+          conversationsTableArn: Fn.importValue("ConversationsTableArntest"),
           userPoolArn: Fn.importValue("userPoolArntest"),
-          notificationEmailAddress: notificationEmailAddress}
+          notificationEmailAddress: await new StageParameters("us-east-1").retrieveFromStage("NotificationEmailAddress", "test")}
 }
 
 async function getProdConfig(): Promise<StageConfiguration>
@@ -154,7 +152,7 @@ async function getProdConfig(): Promise<StageConfiguration>
     connectionsTableArn: Fn.importValue("ConnectionsTableArnprod"),
     conversationsTableArn: Fn.importValue("ConversationsTableArnprod"),
     userPoolArn: await new StageParameters(process.env.AWS_REGION!).retrieveFromStage("userPoolArn", "prod"),
-    notificationEmailAddress: await new StageParameters(process.env.AWS_REGION!).retrieveFromStage("notificationEmailAddress", "prod")}
+    notificationEmailAddress: await new StageParameters(process.env.AWS_REGION!).retrieveFromStage("NotificationEmailAddress", "prod")}
 }
 
 async function getSourceCodeArnConnection(): Promise<string>

@@ -8,17 +8,13 @@ import { EventDispatcher } from "../../infrastructure/event-dispatcher"
 
 export const lambdaHandler = async (dynamoDBStreamEvent: DynamoDBStreamEvent, context: Context): Promise<any> => {
   
-  console.log("ENTER")
-  try{
+    try{
     const event = EventParser.parse(dynamoDBStreamEvent) 
 
-    console.log("event")
-    console.log(event)
     if (event != undefined)
     {
       const eventDispatcher = new EventDispatcher(process.env.AWS_REGION!)
-      console.log("Dipsatch")
-      await eventDispatcher.dispatch(event)
+        await eventDispatcher.dispatch(event)
     }
   }
   catch(error)
@@ -50,7 +46,6 @@ export class EventParser{
 
   static resolveSnapshot(image: any)
   {
-    console.log(image)
     const unmarshalledImage = unmarshall(
       image as {
         [key: string]: AttributeValue
@@ -63,7 +58,6 @@ export class EventParser{
     snapshot.participantIds = new Set(unmarshalledImage.participantIds)
     snapshot.adminIds = new Set(unmarshalledImage.adminIds)
   
-    console.log("snapshot - " + JSON.stringify(snapshot))
     return snapshot
   }
 }

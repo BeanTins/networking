@@ -2,7 +2,7 @@
 import { StackProps } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import * as path from "path"
-import { specBuilder} from "./request"
+import { SpecBuilderFactory} from "./request"
 import { CognitoAuthorizer} from "../../infrastructure/cognito-authorizer"
 import { LambdaEndpoint } from "../../provisioning/lambda-endpoint"
 
@@ -21,6 +21,7 @@ export class RequestStack extends LambdaEndpoint {
 
     const authorizerName = "CognitoAuthorizer"
     const authorizerSpec = new CognitoAuthorizer(authorizerName, props.userPoolArn)
+    const specBuilder = SpecBuilderFactory.create()
 
     specBuilder.withSecurityExtension(authorizerSpec)
     specBuilder.selectingSecurity(authorizerName)

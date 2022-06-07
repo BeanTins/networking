@@ -17,18 +17,15 @@ export class ValidateConversationConnectionsDynamo implements ValidateConversati
 
     async isInstigatorConnectedWithEveryone(instigatorMemberId: string, otherPartipantIds: Set<string>): Promise<boolean>
     {
-      console.log("isInstigatorConnectedWithEveryone")
       let connectedToAll: boolean = false
 
       var connectedToMembersObject: any = {}
       var index = 0;
-      console.log("starting..")
       otherPartipantIds.forEach(function(value) {
           index++;
           var titleKey = ":connectedToMemberId"+index
           connectedToMembersObject[titleKey.toString()] = value
       })
-      console.log("started")
 
       var params = {
         KeyConditionExpression: "#memberId = :memberId",
@@ -37,7 +34,6 @@ export class ValidateConversationConnectionsDynamo implements ValidateConversati
         ExpressionAttributeNames: { "#connectedToMemberId": "connectedToMemberId" , "#memberId": "memberId"},
         TableName: this.tableName 
       }
-      console.log(params)
       logger.verbose(JSON.stringify(params))
       try{
           let result = await this.dynamoDB.send(new QueryCommand(params))

@@ -8,20 +8,23 @@ import logger  from "../../infrastructure/lambda-logger"
 import { EventDispatcher } from "../../infrastructure/event-dispatcher"
 import { UnspecifiedConnectionRequest} from "./infrastructure/events"
 
-export const specBuilder = function() { 
+export class SpecBuilderFactory
+{
+  static create()
+  {
+    const specBuilder = new OpenAPISpecBuilder("3.0.0")
 
-  const specBuilder = new OpenAPISpecBuilder("3.0.0")
-
-  specBuilder.describedAs("connection request", "member request to connect with another member on the BeanTins service", "1.9.0")
-
-  const endpoint = specBuilder.withEndpoint("/connection/request", HttpMethod.Post)
-  endpoint.withRequestBodyStringProperty({name: "initiatingMemberId", required: true})
-  endpoint.withRequestBodyStringProperty({name: "invitedMemberId", required: true})
-  endpoint.withResponse("201", "connection requested")
-  endpoint.withResponse("400", "connection request failed")
-
-  return specBuilder
-}()
+    specBuilder.describedAs("connection request", "member request to connect with another member on the BeanTins service", "1.9.0")
+  
+    const endpoint = specBuilder.withEndpoint("/connection/request", HttpMethod.Post)
+    endpoint.withRequestBodyStringProperty({name: "initiatingMemberId", required: true})
+    endpoint.withRequestBodyStringProperty({name: "invitedMemberId", required: true})
+    endpoint.withResponse("201", "connection requested")
+    endpoint.withResponse("400", "connection request failed")
+  
+    return specBuilder
+  }
+}
 
 export const lambdaHandler = async (event: APIGatewayEvent, context: Context): Promise<APIGatewayProxyResult> => { 
     var controller: RequestController = new RequestController()

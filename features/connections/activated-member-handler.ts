@@ -7,7 +7,6 @@ export const lambdaHandler = async (event: EventBridgeEvent<any, any>, context: 
   try{
     const handler = new NotificationHandler()
 
-    console.log(event)
     await handler.handle(new MemberActivatedEvent(event.detail.email, event.detail.id, event.detail.name))
   }
   catch(error)
@@ -27,12 +26,7 @@ class NotificationHandler
 
   async handle(event: MemberActivatedEvent)
   {
-
-    console.log(event)
-
     let member = Member.create(event.name, event.email, event.id)
-
-    console.log(member)
 
     await this.memberDAO.save(member)
   }

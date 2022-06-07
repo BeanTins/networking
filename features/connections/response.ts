@@ -6,21 +6,24 @@ import { ConnectionsDAO } from "./infrastructure/connections-dao"
 import { HttpResponse } from "../../infrastructure/http-response"
 import logger  from "../../infrastructure/lambda-logger"
 
-export const specBuilder = function() { 
+export class SpecBuilderFactory
+{
+  static create()
+  {
+    const specBuilder = new OpenAPISpecBuilder("3.0.0")
 
-  const specBuilder = new OpenAPISpecBuilder("3.0.0")
-
-  specBuilder.describedAs("connection response", "member response to a connection invitation on the BeanTins service", "1.9.0")
-
-  const endpoint = specBuilder.withEndpoint("/connection/request/{invitationId}/decision/{decision}", HttpMethod.Post)
-
-  endpoint.withStringPathParameter({name: "invitationId", description: "the ID of a connection invitation from one member to another"})
-  endpoint.withStringPathParameter({name: "decision", description: "the decision that the invited member has made on the connection request", enum: ["approve,reject"]})
-  endpoint.withResponse("201", "connection created")
-  endpoint.withResponse("400", "connection response failed")
-
-  return specBuilder
-}()
+    specBuilder.describedAs("connection response", "member response to a connection invitation on the BeanTins service", "1.9.0")
+  
+    const endpoint = specBuilder.withEndpoint("/connection/request/{invitationId}/decision/{decision}", HttpMethod.Post)
+  
+    endpoint.withStringPathParameter({name: "invitationId", description: "the ID of a connection invitation from one member to another"})
+    endpoint.withStringPathParameter({name: "decision", description: "the decision that the invited member has made on the connection request", enum: ["approve,reject"]})
+    endpoint.withResponse("201", "connection created")
+    endpoint.withResponse("400", "connection response failed")
+  
+    return specBuilder
+  }
+}
 
 export const lambdaHandler = async (event: APIGatewayEvent, context: Context): Promise<APIGatewayProxyResult> => { 
     var controller: ResponseController = new ResponseController()

@@ -15,7 +15,7 @@ export class ConversationRepositoryDynamo implements ConversationRepository
   {
     const snapshot = ConversationSnapshot.createFromConversation(conversation)
 
-    console.log(await this.dataMapper.put(snapshot))
+    await this.dataMapper.put(snapshot)
   }
 
   async load(id: string): Promise<Conversation|null>  

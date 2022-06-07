@@ -9,22 +9,25 @@ import { Conversation, AdminsNotInConversation } from "./domain/conversation"
 import { ConversationRepository } from "./domain/conversation-repository"
 import { ConversationRepositoryDynamo } from "./infrastructure/conversation-repository-dynamo"
 
-export const specBuilder = function() { 
+export class SpecBuilderFactory
+{
+  static create()
+  {
+    const specBuilder = new OpenAPISpecBuilder("3.0.0")
 
-  const specBuilder = new OpenAPISpecBuilder("3.0.0")
-
-  specBuilder.describedAs("conversation start", "member request to start a conversation with a group of their connections", "1.9.0")
-
-  const endpoint = specBuilder.withEndpoint("/conversation/start", HttpMethod.Post)
-  endpoint.withRequestBodyStringProperty({name: "initiatingMemberId", required: true})
-  endpoint.withRequestBodyStringProperty({name: "name", required: false})  
-  endpoint.withRequestBodySetProperty({name: "invitedMemberIds", required: true, type: "string"})
-  endpoint.withRequestBodySetProperty({name: "adminMemberIds", required: false, type: "string"})  
-  endpoint.withResponse("201", "conversation created")
-  endpoint.withResponse("400", "conversation start failed")
-
-  return specBuilder
-}()
+    specBuilder.describedAs("conversation start", "member request to start a conversation with a group of their connections", "1.9.0")
+  
+    const endpoint = specBuilder.withEndpoint("/conversation/start", HttpMethod.Post)
+    endpoint.withRequestBodyStringProperty({name: "initiatingMemberId", required: true})
+    endpoint.withRequestBodyStringProperty({name: "name", required: false})  
+    endpoint.withRequestBodySetProperty({name: "invitedMemberIds", required: true, type: "string"})
+    endpoint.withRequestBodySetProperty({name: "adminMemberIds", required: false, type: "string"})  
+    endpoint.withResponse("201", "conversation created")
+    endpoint.withResponse("400", "conversation start failed")
+  
+    return specBuilder
+    }
+}
 
 export const lambdaHandler = async (event: APIGatewayEvent, context: Context): Promise<APIGatewayProxyResult> => { 
     var controller: StartController = new StartController()
@@ -56,7 +59,6 @@ async start(startDTO: any) {
         [AdminsNotInConversation, 400]
       ])
 
-     console.log(error)
       response = HttpResponse.error(error, statusCodeMap)
     }
     return response
