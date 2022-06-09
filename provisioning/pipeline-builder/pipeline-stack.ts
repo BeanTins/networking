@@ -92,15 +92,15 @@ export class PipelineStack extends Stack {
 
     if (props.acceptanceStage != undefined){
 
-      const acceptanceDeploymentStage = this.stageFactory.create(this, "AcceptanceTest", "test", props.acceptanceStage.withCustomDefinitions)
-    
+      const acceptanceDeploymentStage = this.stageFactory.create(this, props.name + "Test", "test", props.acceptanceStage.withCustomDefinitions)
+
       const buildStep = this.buildAcceptanceStageStep(props.name, props.acceptanceStage, acceptanceDeploymentStage)
 
-      pipeline.addStage(acceptanceDeploymentStage, { post: [buildStep] })
+      const stage = pipeline.addStage(acceptanceDeploymentStage, { post: [buildStep],  })
     }
 
     if (props.productionStage != undefined){
-      const productionDeploymentStage = this.stageFactory.create(this, "Production", "prod", props.productionStage.withCustomDefinitions)
+      const productionDeploymentStage = this.stageFactory.create(this, props.name + "Prod", "prod", props.productionStage.withCustomDefinitions)
 
       const buildStep = this.buildProductionStageStep(props.name, props.productionStage)
 
@@ -130,6 +130,7 @@ export class PipelineStack extends Stack {
   private actionAnyDeferredPermissionChanges(pipeline: CodePipeline) {
     if (this.deferredReportGroupPermissionChanges.length > 0) {
       pipeline.buildPipeline()
+      console.log("pipeline built")
       this.deferredReportGroupPermissionChanges.forEach((changePermission) => {
         changePermission()
       })
@@ -179,15 +180,17 @@ export class PipelineStack extends Stack {
     })
 
     if (withPermissionToAccess != undefined) {
-      for (const accessingResources of withPermissionToAccess) {
+      this.deferredReportGroupPermissionChanges.push(() => {
+        for (const accessingResources of withPermissionToAccess) {
 
-        role.addToPolicy(new PolicyStatement(
-          {
-            effect: Effect.ALLOW,
-            resources: [accessingResources.resource],
-            actions: accessingResources.withAllowableOperations
-          }))
-      }
+          role.addToPolicy(new PolicyStatement(
+            {
+              effect: Effect.ALLOW,
+              resources: [accessingResources.resource],
+              actions: accessingResources.withAllowableOperations
+            }))
+        }
+        })
     }
     return role
   }

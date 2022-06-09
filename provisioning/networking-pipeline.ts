@@ -106,16 +106,16 @@ async function main(): Promise<void>
 main().catch(console.error)
 
 function provisionTestResources(app: App) {
-  const eventListenerQueue = new EventListenerStack(app, "EventListenerQueuetest", {
+  const eventListenerQueue = new EventListenerStack(app, "NetworkingTest-EventListenerQueue", {
     stageName: "test",
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
   })
-  const emailListenerQueue = new EmailListenerStack(app, "EmailListenerQueuetest", {
+  const emailListenerQueue = new EmailListenerStack(app, "NetworkingTest-EmailListenerQueue", {
     stageName: "test",
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
   })
 
-  const beanTinsCredentials = new BeanTinsCredentials(app, "BeanTinsCredentialsTest", {
+  const beanTinsCredentials = new BeanTinsCredentials(app, "NetworkingTest-Credentials", {
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
     stageName: "test",
     storeTypeForSettings: StoreType.Output
