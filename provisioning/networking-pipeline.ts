@@ -8,7 +8,7 @@ import { BeanTinsCredentials, StoreType} from "../../credentials/infrastructure/
 import { EmailListenerStack } from "../features/connections/component-tests/helpers/email-listener-stack"
 import { EventListenerStack } from "../test-helpers/event-listener-stack"
 import { MembershipEventBusFake } from "../features/connections/component-tests/helpers/membership-event-bus-fake"
-import {SSM} from "aws-sdk"
+import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm"
 
 interface StageConfiguration
 {
@@ -49,7 +49,7 @@ async function main(): Promise<void>
       extractingSourceFrom: [
         { provider: SCM.GitHub, owner: "BeanTins", repository: "networking", branch: "main", accessIdentifier: sourceCodeArnConnection },
         { provider: SCM.GitHub, owner: "BeanTins", repository: "credentials", branch: "main", accessIdentifier: sourceCodeArnConnection }],
-      executingCommands: ["cd ..\/credentials", "npm ci", "npm run build", "cd - ", "npm ci", "npm run build", "npm run test:unit", "npx cdk synth"],
+      executingCommands: ["cd ..\/credentials", "npm ci", "npm run build", "cd - ", "node -v", "npm ci", "npm run build", "npm run test:unit", "npx cdk synth"],
       reporting: {fromDirectory: "reports/unit-tests", withFiles: ["test-results.xml"]},
       withPermissionToAccess: [
         {resource: "*", withAllowableOperations: ["ssm:GetParameter"]}]
@@ -57,7 +57,7 @@ async function main(): Promise<void>
 
   pipeline.withAcceptanceStage(
     {
-      extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: sourceCodeArnConnection},
+      extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "networking", branch: "main", accessIdentifier: sourceCodeArnConnection},
                             { provider: SCM.GitHub, owner: "BeanTins", repository: "credentials", branch: "main", accessIdentifier: sourceCodeArnConnection }],
       executingCommands: ["cd ..\/credentials", "npm ci", "cd - ", "npm ci", "npm run test:component"],
       withEnvironmentVariables : {EventListenerQueueNametest: Fn.importValue("EventListenerQueueNametest"),
@@ -156,7 +156,7 @@ async function getProdConfig(): Promise<StageConfiguration>
 
 async function getSourceCodeArnConnection(): Promise<string>
 {
-  const ssm = new SSM({region: process.env.AWS_REGION})
+  const ssm = new SSMClient({region: process.env.AWS_REGION})
   let parameterValue = ""
   var options = {
     Name: "SourceCodeConnectionArn",
@@ -164,7 +164,7 @@ async function getSourceCodeArnConnection(): Promise<string>
   }
 
   try{
-    const result = await ssm.getParameter(options).promise()
+    const result = await ssm.send(new GetParameterCommand(options))
     parameterValue = result.Parameter!.Value!
   }
   catch (error)
