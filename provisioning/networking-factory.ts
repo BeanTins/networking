@@ -1,18 +1,18 @@
 import { Construct } from "constructs"
 import { NetworkingStage } from "./networking-stage"
-import { StageFactory } from "./pipeline-builder/stage-factory"
+import { StageFactory, StageFactoryProps } from "./pipeline-builder/stage-factory"
 import { DeploymentStage } from "./pipeline-builder/deployment-stage"
-import { CustomDefinitions } from "./pipeline-builder/pipeline-stack"
 
 export class NetworkingFactory implements StageFactory {
-  create(scope: Construct, name: string, stageName: string, customDefinitions?: CustomDefinitions): DeploymentStage {
-    return new NetworkingStage(scope, name, 
-      {stageName: stageName, 
-       userPoolArn: customDefinitions!["userPoolArn"],
-       membershipEventBusArn: customDefinitions!["membershipEventBusArn"],
-       emailConfigurationSet: customDefinitions!["emailConfigurationSet"],
-       eventListenerQueueArn: customDefinitions!["eventListenerQueueArn"],
-       notificationEmailAddress: customDefinitions!["notificationEmailAddress"]})
+  create(scope: Construct, id: string, props: StageFactoryProps): DeploymentStage {
+    return new NetworkingStage(scope, id,  
+      {stageName: props.stageName, 
+       stackNamePrepend: props.stackNamePrepend,
+       userPoolArn: props.customDefinitions!["userPoolArn"],
+       membershipEventBusArn: props.customDefinitions!["membershipEventBusArn"],
+       emailConfigurationSet: props.customDefinitions!["emailConfigurationSet"],
+       eventListenerQueueArn: props.customDefinitions!["eventListenerQueueArn"],
+       notificationEmailAddress: props.customDefinitions!["notificationEmailAddress"]})
   }
 }
 

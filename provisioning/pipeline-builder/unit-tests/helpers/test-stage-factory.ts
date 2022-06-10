@@ -1,9 +1,9 @@
 import { Stage, Stack, CfnOutput } from "aws-cdk-lib"
 import { Construct } from "constructs"
-import { StageFactory } from "../../stage-factory"
+import { StageFactory, StageFactoryProps } from "../../stage-factory"
 import { DeploymentStage } from "../../deployment-stage"
 import { Bucket } from "aws-cdk-lib/aws-s3"
-import { CustomDefinitions } from "../../pipeline-stack"
+
 
 export class TestStageFactory implements StageFactory {
 
@@ -15,15 +15,14 @@ export class TestStageFactory implements StageFactory {
   }
 
   public create(scope: Construct, 
-                name: string, 
-                stageName: string, 
-                customDefinitions?: CustomDefinitions): DeploymentStage {
+                name: string,
+                props: StageFactoryProps): DeploymentStage {
     this.createdStacks.push(name)
 
     let bucketName = "defaultbucket"
-    if (customDefinitions != undefined)
+    if (props.customDefinitions != undefined)
     {
-      bucketName = customDefinitions!["bucketName"]
+      bucketName = props.customDefinitions!["bucketName"]
     }
     const stage = new TestStage(scope, name, bucketName)
     this.stages.push(stage)

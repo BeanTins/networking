@@ -92,19 +92,26 @@ export class PipelineStack extends Stack {
 
     if (props.acceptanceStage != undefined){
 
-      const acceptanceDeploymentStage = this.stageFactory.create(this, props.name + "Test", "test", props.acceptanceStage.withCustomDefinitions)
+      const acceptanceDeploymentStage = this.stageFactory.create(this, "AcceptanceTest", 
+      {stageName: "test", 
+       stackNamePrepend: props.name + "Test",
+       customDefinitions: props.acceptanceStage.withCustomDefinitions})
 
       const buildStep = this.buildAcceptanceStageStep(props.name, props.acceptanceStage, acceptanceDeploymentStage)
 
-      const stage = pipeline.addStage(acceptanceDeploymentStage, { post: [buildStep],  })
+      const a = pipeline.addStage(acceptanceDeploymentStage, { post: [buildStep] })
+      console.log("stategname - " + a.stageName)
     }
 
     if (props.productionStage != undefined){
-      const productionDeploymentStage = this.stageFactory.create(this, props.name + "Prod", "prod", props.productionStage.withCustomDefinitions)
+      const productionDeploymentStage = this.stageFactory.create(this, "Production", 
+      {stageName: "prod", 
+       stackNamePrepend: props.name + "Prod",
+       customDefinitions: props.productionStage.withCustomDefinitions})
 
       const buildStep = this.buildProductionStageStep(props.name, props.productionStage)
 
-      pipeline.addStage(productionDeploymentStage,buildStep)
+      const a = pipeline.addStage(productionDeploymentStage,buildStep)
     }
 
     this.actionAnyDeferredPermissionChanges(pipeline)
@@ -130,7 +137,7 @@ export class PipelineStack extends Stack {
   private actionAnyDeferredPermissionChanges(pipeline: CodePipeline) {
     if (this.deferredReportGroupPermissionChanges.length > 0) {
       pipeline.buildPipeline()
-      console.log("pipeline built")
+
       this.deferredReportGroupPermissionChanges.forEach((changePermission) => {
         changePermission()
       })
@@ -180,17 +187,15 @@ export class PipelineStack extends Stack {
     })
 
     if (withPermissionToAccess != undefined) {
-      this.deferredReportGroupPermissionChanges.push(() => {
         for (const accessingResources of withPermissionToAccess) {
 
           role.addToPolicy(new PolicyStatement(
-            {
-              effect: Effect.ALLOW,
-              resources: [accessingResources.resource],
-              actions: accessingResources.withAllowableOperations
-            }))
+          {
+            effect: Effect.ALLOW,
+            resources: [accessingResources.resource],
+            actions: accessingResources.withAllowableOperations
+          }))
         }
-        })
     }
     return role
   }

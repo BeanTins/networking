@@ -14,7 +14,7 @@ interface StartStackProps extends StackProps {
   userPoolArn: string
 }
 
-export class StartStack extends LambdaEndpoint {
+export class ConversationStartCommand extends LambdaEndpoint {
   
   constructor(scope: Construct, id: string, props: StartStackProps) {
 

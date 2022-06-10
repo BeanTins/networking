@@ -17,7 +17,7 @@ interface ConfirmationPolicyStackProps extends StackProps {
   notificationEmailAddress: string
 }
 
-export class ConfirmationPolicyStack extends Stack {
+export class ConfirmationPolicy extends Stack {
 
   public readonly lambda: Function
 

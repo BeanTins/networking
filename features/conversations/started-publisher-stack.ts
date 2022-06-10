@@ -14,7 +14,7 @@ interface StartedPublisherStackProps extends StackProps {
   eventBusName: string
 }
 
-export class StartedPublisherStack extends Stack {
+export class ConversationStartedPublisher extends Stack {
 
   public readonly lambda: Function
 

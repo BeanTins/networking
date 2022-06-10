@@ -12,7 +12,7 @@ interface ActivatedMemberHandlerStackProps extends StackProps {
   membershipEventBusArn: string
 }
 
-export class ActivatedMemberHandlerStack extends Stack {
+export class ActivatedMemberHandler extends Stack {
 
   public readonly lambda: Function
 

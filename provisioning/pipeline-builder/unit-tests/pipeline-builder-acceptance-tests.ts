@@ -15,7 +15,7 @@ beforeEach(() => {
   app = new App();
   stageFactory = new TestStageFactory()
   pipelineBuilder = new PipelineBuilder(app, stageFactory)
-  pipelineBuilder.withName("MembershipPipeline")
+  pipelineBuilder.withName("Membership")
   pipelineBuilder.withCommitStage(
     {
       extractingSourceFrom: [{ provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection"}],
@@ -52,7 +52,6 @@ test("Pipeline with same source as commit", () => {
 })
 
 test("Pipeline with source from github", () => {
-  pipelineBuilder.withName("MembershipPipeline")
   pipelineBuilder.withAcceptanceStage(
     {extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection"}],
      executingCommands: []})

@@ -1,7 +1,7 @@
-import { RequestStack } from "../features/connections/request-stack"
-import { ResponseStack } from "../features/connections/response-stack"
+import { ConnectionRequestCommand } from "../features/connections/request-stack"
+import { ConnectionResponseCommand } from "../features/connections/response-stack"
 import { InvitationPolicyStack } from "../features/connections/invitation-policy-stack"
-import { ConfirmationPolicyStack } from "../features/connections/confirmation-policy-stack"
+import { ConfirmationPolicy } from "../features/connections/confirmation-policy-stack"
 import { MemberProjection } from "../features/connections/infrastructure/member-projection"
 import { ConnectionRequestTable } from "../features/connections/infrastructure/connection-request-table"
 import { ConnectionsTable } from "../features/connections/infrastructure/connections-table"
@@ -9,11 +9,11 @@ import { ConversationsTable } from "../features/conversations/infrastructure/con
 import { DeploymentStage } from "./pipeline-builder/deployment-stage"
 import { CfnOutput, StageProps, Stage } from "aws-cdk-lib"
 import { Construct } from "constructs"
-import { ActivatedMemberHandlerStack } from "../features/connections/activated-member-handler-stack"
-import { UnspecifiedRequestHandlerStack } from "../features/connections/unspecified-request-handler-stack"
+import { ActivatedMemberHandler } from "../features/connections/activated-member-handler-stack"
+import { UnspecifiedRequestHandler } from "../features/connections/unspecified-request-handler-stack"
 import { NetworkingEventBus } from "../infrastructure/event-bus"
-import { StartStack} from "../features/conversations/start-stack"
-import { StartedPublisherStack } from "../features/conversations/started-publisher-stack"
+import { ConversationStartCommand} from "../features/conversations/start-stack"
+import { ConversationStartedPublisher } from "../features/conversations/started-publisher-stack"
 
 interface NetworkingStageProps extends StageProps{
   stageName: string
@@ -22,32 +22,42 @@ interface NetworkingStageProps extends StageProps{
   userPoolArn: string 
   notificationEmailAddress: string
   eventListenerQueueArn?: string
+  stackNamePrepend?: string
 }
 
 export class NetworkingStage extends Stage implements DeploymentStage{
-  private connectionRequest: RequestStack
-  private connectionResponse: ResponseStack
-  private confirmationPolicy: ConfirmationPolicyStack
+  private connectionRequest: ConnectionRequestCommand
+  private connectionResponse: ConnectionResponseCommand
+  private confirmationPolicy: ConfirmationPolicy
   private invitationPolicy: InvitationPolicyStack
   private connectionRequestTable: ConnectionRequestTable
   private connectionsTable: ConnectionsTable
   private conversationsTable: ConversationsTable
-  private activatedMemberHandler: ActivatedMemberHandlerStack
-  private unspecifiedRequestHandler: UnspecifiedRequestHandlerStack
-  private conversationStart: StartStack
-  private conversationStartedPublisher: StartedPublisherStack
+  private activatedMemberHandler: ActivatedMemberHandler
+  private unspecifiedRequestHandler: UnspecifiedRequestHandler
+  private conversationStart: ConversationStartCommand
+  private conversationStartedPublisher: ConversationStartedPublisher
   private memberProjection: MemberProjection
   private eventBus: NetworkingEventBus
+  private stackNamePrepend: string|undefined
   get envvars(): Record<string, CfnOutput> {
     return {...this.memberProjection.envvars, ...this.connectionRequest.envvars}
   }
   
+  createStack<Type, PropType>(type: (new (scope: Construct, id: string, props: PropType) => Type), props: PropType): Type {
+    //@ts-ignore
+    props.stackName = this.stackNamePrepend + "-" + type.name
+    return new type(this, type.name, props)
+  }
+
   constructor(scope: Construct, id: string, props: NetworkingStageProps) {
+    
     super(scope, id, props)
 
-    this.memberProjection = new MemberProjection(this, "MemberProjection", { stageName: props.stageName })
+    this.stackNamePrepend = props.stackNamePrepend
+    this.memberProjection = this.createStack(MemberProjection, { stageName: props.stageName })
 
-    this.eventBus = new NetworkingEventBus(this, "EventBus", { stageName: props.stageName })
+    this.eventBus = this.createStack(NetworkingEventBus, { stageName: props.stageName })
 
     if (props.eventListenerQueueArn != undefined) {
       this.eventBus.listenOnQueueFor(props.eventListenerQueueArn)
@@ -56,37 +66,35 @@ export class NetworkingStage extends Stage implements DeploymentStage{
     this.buildConnectionInfrastructure(props)
 
     this.buildConversationInfrastructure(props)
-       
   }
 
   private buildConversationInfrastructure(props: NetworkingStageProps) {
-    this.conversationsTable = new ConversationsTable(this, "ConversationsTable", { stageName: props.stageName })
+    this.conversationsTable = this.createStack(ConversationsTable, { stageName: props.stageName })
 
-    this.conversationStart = new StartStack(this, "ConversationStartCommand",
-      {
+    this.conversationStart = this.createStack(ConversationStartCommand, {
         conversationsTableName: this.conversationsTable.name,
         connectionsTableName: this.connectionsTable.name,
         stageName: props.stageName,
         userPoolArn: props.userPoolArn
-      })
-      this.connectionsTable.grantAccessTo(this.conversationStart.lambda.grantPrincipal)
-      this.conversationsTable.grantAccessTo(this.conversationStart.lambda.grantPrincipal)
+    })
+    this.connectionsTable.grantAccessTo(this.conversationStart.lambda.grantPrincipal)
+    this.conversationsTable.grantAccessTo(this.conversationStart.lambda.grantPrincipal)
 
-      this.conversationStartedPublisher = new StartedPublisherStack(this, "StartedPublisher", 
-      {
-        conversationsTable: this.conversationsTable.conversations,
-        eventBusName: this.eventBus.Name,
-        eventBusArn: this.eventBus.Arn
-      })
-      this.conversationsTable.grantAccessTo(this.conversationStartedPublisher.lambda.grantPrincipal)      
-      this.eventBus.grantAccessTo(this.conversationStartedPublisher.lambda.grantPrincipal)
+    this.conversationStartedPublisher = this.createStack(ConversationStartedPublisher,
+    {
+      conversationsTable: this.conversationsTable.conversations,
+      eventBusName: this.eventBus.Name,
+      eventBusArn: this.eventBus.Arn
+    })
+    this.conversationsTable.grantAccessTo(this.conversationStartedPublisher.lambda.grantPrincipal)      
+    this.eventBus.grantAccessTo(this.conversationStartedPublisher.lambda.grantPrincipal)
   }
 
   private buildConnectionInfrastructure(props: NetworkingStageProps) {
-    this.connectionRequestTable = new ConnectionRequestTable(this, "ConnectionRequestTable", { stageName: props.stageName })
-    this.connectionsTable = new ConnectionsTable(this, "ConnectionsTable", { stageName: props.stageName })
+    this.connectionRequestTable = this.createStack(ConnectionRequestTable, { stageName: props.stageName })
+    this.connectionsTable = this.createStack(ConnectionsTable, { stageName: props.stageName })
 
-    this.connectionRequest = new RequestStack(this, "ConnectionRequestCommand",
+    this.connectionRequest = this.createStack(ConnectionRequestCommand,
       {
         memberProjectionName: this.memberProjection.name,
         connectionRequestTableName: this.connectionRequestTable.name,
@@ -98,7 +106,7 @@ export class NetworkingStage extends Stage implements DeploymentStage{
     this.connectionRequestTable.grantAccessTo(this.connectionRequest.lambda.grantPrincipal)
     this.eventBus.grantAccessTo(this.connectionRequest.lambda.grantPrincipal)
 
-    this.connectionResponse = new ResponseStack(this, "ConnectionResponseCommand",
+    this.connectionResponse = this.createStack(ConnectionResponseCommand,
       {
         memberProjectionName: this.memberProjection.name,
         connectionRequestTableName: this.connectionRequestTable.name,
@@ -112,7 +120,7 @@ export class NetworkingStage extends Stage implements DeploymentStage{
     this.connectionsTable.grantAccessTo(this.connectionResponse.lambda.grantPrincipal)
     this.eventBus.grantAccessTo(this.connectionResponse.lambda.grantPrincipal)
 
-    this.confirmationPolicy = new ConfirmationPolicyStack(this, "ConfirmationPolicy",
+    this.confirmationPolicy = this.createStack(ConfirmationPolicy,
       {
         connectionRequestTableName: this.connectionRequestTable.name,
         connectionsTable: this.connectionsTable.connections,
@@ -125,7 +133,7 @@ export class NetworkingStage extends Stage implements DeploymentStage{
     this.connectionRequestTable.grantAccessTo(this.confirmationPolicy.lambda.grantPrincipal)
     this.eventBus.grantAccessTo(this.confirmationPolicy.lambda.grantPrincipal)
 
-    this.invitationPolicy = new InvitationPolicyStack(this, "InvitationPolicy",
+    this.invitationPolicy = this.createStack(InvitationPolicyStack,
       {
         connectionRequestTable: this.connectionRequestTable.connectionRequests,
         memberProjectionName: this.memberProjection.name,
@@ -136,14 +144,14 @@ export class NetworkingStage extends Stage implements DeploymentStage{
     this.memberProjection.grantAccessTo(this.invitationPolicy.lambda.grantPrincipal)
     this.eventBus.grantAccessTo(this.invitationPolicy.lambda.grantPrincipal)
 
-    this.activatedMemberHandler = new ActivatedMemberHandlerStack(this, "MemberActivatedHandler",
+    this.activatedMemberHandler = this.createStack(ActivatedMemberHandler,
       {
         memberProjectionName: this.memberProjection.name,
         membershipEventBusArn: props.membershipEventBusArn
       })
     this.memberProjection.grantAccessTo(this.activatedMemberHandler.lambda.grantPrincipal)
 
-    this.unspecifiedRequestHandler = new UnspecifiedRequestHandlerStack(this, "UnspecifiedRequestHandler",
+    this.unspecifiedRequestHandler = this.createStack(UnspecifiedRequestHandler,
       {
         memberProjectionName: this.memberProjection.name,
         connectionRequestTableName: this.connectionRequestTable.name,

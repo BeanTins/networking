@@ -13,7 +13,7 @@ interface EventPublisherStackProps extends StackProps {
   networkingEventBusArn: string
 }
 
-export class UnspecifiedRequestHandlerStack extends Stack {
+export class UnspecifiedRequestHandler extends Stack {
 
   public readonly lambda: Function
 

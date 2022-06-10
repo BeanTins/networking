@@ -15,7 +15,7 @@ interface RequestStackProps extends StackProps {
   eventBusName: string
 }
 
-export class RequestStack extends LambdaEndpoint {
+export class ConnectionRequestCommand extends LambdaEndpoint {
   
   constructor(scope: Construct, id: string, props: RequestStackProps) {
 
