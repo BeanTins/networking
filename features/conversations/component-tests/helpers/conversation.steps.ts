@@ -36,6 +36,7 @@ beforeAll(async()=> {
     connectionsAccessor = new ConnectionsAccessor(AWS_REGION)
     conversationsAccessor = new ConversationsAccessor(AWS_REGION)
     eventListener = new EventListenerClient(AWS_REGION)
+    console.log(process.env)
   }
   catch(error)
   {
