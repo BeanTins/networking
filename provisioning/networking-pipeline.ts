@@ -62,8 +62,8 @@ async function main(): Promise<void>
       executingCommands: ["cd ..\/credentials", "npm ci", "cd - ", "npm ci", "npm run test:component"],
       withEnvironmentVariables : {EventListenerQueueNametest: Fn.importValue("EventListenerQueueNametest"),
                                   EmailListenerQueueNametest: Fn.importValue("EmailListenerQueueNametest"),
-                                  userPoolIdtest: Fn.importValue("userPoolIdtest"),
-                                  userPoolClientIdtest: Fn.importValue("UserPoolMemberClientIdtest")},
+                                  UserPoolIdtest: Fn.importValue("userPoolIdtest"),
+                                  UserPoolMemberClientId: Fn.importValue("UserPoolMemberClientIdtest")},
       reporting: {fromDirectory: "reports/component-tests", withFiles: ["test-results.xml", "tests.log"], exportingTo: ExportType.S3},
       exposingEnvVars: true,
       withPermissionToAccess: [

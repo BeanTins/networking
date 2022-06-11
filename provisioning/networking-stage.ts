@@ -14,6 +14,7 @@ import { UnspecifiedRequestHandler } from "../features/connections/unspecified-r
 import { NetworkingEventBus } from "../infrastructure/event-bus"
 import { ConversationStartCommand} from "../features/conversations/start-stack"
 import { ConversationStartedPublisher } from "../features/conversations/started-publisher-stack"
+import { EnvvarsStack } from "./envvars-stack"
 
 interface NetworkingStageProps extends StageProps{
   stageName: string
@@ -40,20 +41,30 @@ export class NetworkingStage extends Stage implements DeploymentStage{
   private memberProjection: MemberProjection
   private eventBus: NetworkingEventBus
   private stackNamePrepend: string|undefined
+  private _envvars: Record<string, CfnOutput>
+
   get envvars(): Record<string, CfnOutput> {
-    return {...this.memberProjection.envvars, ...this.connectionRequest.envvars}
+    return this._envvars
   }
   
   createStack<Type, PropType>(type: (new (scope: Construct, id: string, props: PropType) => Type), props: PropType): Type {
     //@ts-ignore
     props.stackName = this.stackNamePrepend + "-" + type.name
-    return new type(this, type.name, props)
+    const stack = new type(this, type.name, props)
+    
+    if (stack instanceof(EnvvarsStack))
+    {
+      this._envvars = {...this._envvars, ...stack.envvars}
+    }
+
+    return stack
   }
 
   constructor(scope: Construct, id: string, props: NetworkingStageProps) {
     
     super(scope, id, props)
 
+    this._envvars = {}
     this.stackNamePrepend = props.stackNamePrepend
     this.memberProjection = this.createStack(MemberProjection, { stageName: props.stageName })
 
