@@ -35,7 +35,8 @@ export class ConnectionResponseCommand extends LambdaEndpoint {
         ConnectionsTable: props.connectionsTableName},
        stageName: props.stageName,
        entry: path.join(__dirname, "./response.ts"),
-       openAPISpec: specBuilder})
+       openAPISpec: specBuilder,
+      stackName: props.stackName})
     }
 } 
 

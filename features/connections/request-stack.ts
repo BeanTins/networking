@@ -31,7 +31,8 @@ export class ConnectionRequestCommand extends LambdaEndpoint {
        environment: {MemberProjection: props.memberProjectionName, ConnectionRequestTable: props.connectionRequestTableName, EventBusName: props.eventBusName},
        stageName: props.stageName,
        entry: path.join(__dirname, "./request.ts"),
-       openAPISpec: specBuilder})
+       openAPISpec: specBuilder,
+       stackName: props.stackName})
     }
 } 
 

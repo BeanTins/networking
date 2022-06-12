@@ -1,7 +1,7 @@
-import { Stack, RemovalPolicy, CfnOutput } from "aws-cdk-lib"
+import { Stack, RemovalPolicy, CfnOutput, Fn } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import { CodePipeline, CodePipelineSource, CodeBuildStep, ManualApprovalStep } from "aws-cdk-lib/pipelines"
-import { ReportGroup, BuildSpec } from "aws-cdk-lib/aws-codebuild"
+import { ReportGroup, BuildSpec, BuildEnvironmentVariableType } from "aws-cdk-lib/aws-codebuild"
 import { Bucket } from "aws-cdk-lib/aws-s3"
 import { StageFactory } from "./stage-factory"
 import { DeploymentStage } from "./deployment-stage"
@@ -99,8 +99,7 @@ export class PipelineStack extends Stack {
 
       const buildStep = this.buildAcceptanceStageStep(props.name, props.acceptanceStage, acceptanceDeploymentStage)
 
-      const a = pipeline.addStage(acceptanceDeploymentStage, { post: [buildStep] })
-      console.log("stategname - " + a.stageName)
+      pipeline.addStage(acceptanceDeploymentStage, { post: [buildStep] })
     }
 
     if (props.productionStage != undefined){
@@ -160,9 +159,31 @@ export class PipelineStack extends Stack {
     let commands: string[] = [this.buildStageEnvVarCommand("test")]
 
     if(props.exposingEnvVars){
-      buildStepSetup["envFromCfnOutputs"] = deployedInfrastructure.envvars
+      
+      console.log("envvar1 - " + JSON.stringify(deployedInfrastructure.envvars))
+       
+      let environmentVariableSetup: any = {}
 
-      commands = commands.concat(this.buildEnvironmentVariableExportCommands(deployedInfrastructure.envvars))
+      for (const envvar of deployedInfrastructure.envvars)
+      {
+        environmentVariableSetup[envvar] = {type: BuildEnvironmentVariableType.PLAINTEXT, value: Fn.importValue(envvar)}
+      //buildStepSetup["envFromCfnOutputs"] = deployedInfrastructure.envvars
+      }
+
+      buildStepSetup["buildEnvironment"] = {environmentVariables: environmentVariableSetup}
+
+        // {environmentVariables: 
+        //   {"string": 
+        //     {type: BuildEnvironmentVariableType.PLAINTEXT, value: Fn.importValue("")}
+        //   } 
+        // }
+
+
+        console.log(buildStepSetup["buildEnvironment"])
+        // = deployedInfrastructure.envvars
+
+      //commands = commands.concat(this.buildEnvironmentVariableExportCommands(deployedInfrastructure.envvars))
+
     }
 
     if (props.withEnvironmentVariables != undefined)
@@ -200,11 +221,11 @@ export class PipelineStack extends Stack {
     return role
   }
 
-  private buildEnvironmentVariableExportCommands(envvars: Record<string, CfnOutput>) {
+  private buildEnvironmentVariableExportCommands(envvars: string[]) {
     let exportEnvCommands = Array()
     let envName: keyof Record<string, CfnOutput>
     for (envName in envvars) {
-      exportEnvCommands.push("export " + envName + "=$" + envName)
+      exportEnvCommands.push("export " + envName + "=$" + Fn.importValue(envName))
     }
     return exportEnvCommands
   }

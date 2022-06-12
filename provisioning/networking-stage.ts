@@ -15,6 +15,7 @@ import { NetworkingEventBus } from "../infrastructure/event-bus"
 import { ConversationStartCommand} from "../features/conversations/start-stack"
 import { ConversationStartedPublisher } from "../features/conversations/started-publisher-stack"
 import { EnvvarsStack } from "./envvars-stack"
+import { LambdaEndpoint } from "./lambda-endpoint"
 
 interface NetworkingStageProps extends StageProps{
   stageName: string
@@ -41,9 +42,9 @@ export class NetworkingStage extends Stage implements DeploymentStage{
   private memberProjection: MemberProjection
   private eventBus: NetworkingEventBus
   private stackNamePrepend: string|undefined
-  private _envvars: Record<string, CfnOutput>
+  private _envvars: string[]
 
-  get envvars(): Record<string, CfnOutput> {
+  get envvars(): string[] {
     return this._envvars
   }
   
@@ -51,10 +52,15 @@ export class NetworkingStage extends Stage implements DeploymentStage{
     //@ts-ignore
     props.stackName = this.stackNamePrepend + "-" + type.name
     const stack = new type(this, type.name, props)
-    
-    if (stack instanceof(EnvvarsStack))
+
+    //if (stack instanceof(EnvvarsStack) || stack instanceof(LambdaEndpoint))
+    //@ts-ignore
+    if (stack.envvars != undefined)
     {
-      this._envvars = {...this._envvars, ...stack.envvars}
+      // @ts-ignore
+      console.log("certe2 - " + stack.stackName)
+      // @ts-ignore
+      this._envvars = this._envvars.concat(stack.envvars)
     }
 
     return stack
@@ -64,7 +70,7 @@ export class NetworkingStage extends Stage implements DeploymentStage{
     
     super(scope, id, props)
 
-    this._envvars = {}
+    this._envvars = []
     this.stackNamePrepend = props.stackNamePrepend
     this.memberProjection = this.createStack(MemberProjection, { stageName: props.stageName })
 

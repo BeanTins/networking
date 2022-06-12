@@ -17,6 +17,7 @@ interface LambdaEndpointProps extends StackProps {
   stageName: string
   entry: string
   openAPISpec: OpenAPISpecBuilder
+  stackName: string|undefined
 }
 
 export class LambdaEndpoint extends EnvvarsStack {
@@ -25,7 +26,6 @@ export class LambdaEndpoint extends EnvvarsStack {
     
   constructor(scope: Construct, id: string, props: LambdaEndpointProps) {
     super(scope, id, props)
-
     const specBuilder = props.openAPISpec
   
     this.lambda = new NodejsFunction(this, this.buildConstructName("Function", props), {

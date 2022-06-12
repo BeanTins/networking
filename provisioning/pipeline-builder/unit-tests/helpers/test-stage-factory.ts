@@ -34,7 +34,7 @@ export class TestStageFactory implements StageFactory {
 class TestStage extends Stage {
   public testStack: TestStack
   private testEnvvars: CfnOutput
-  get envvars(): Record<string, CfnOutput> {return {testFunction: this.testEnvvars} }
+  get envvars(): string[] {return [] }
   constructor(scope: Construct, id: string, bucketName: string|undefined) {
     super(scope, id)
     this.testStack = new TestStack(this, "TestStack", bucketName)

@@ -30,7 +30,8 @@ export class ConversationStartCommand extends LambdaEndpoint {
        environment: {ConnectionsTable: props.connectionsTableName, ConversationsTable: props.conversationsTableName},
        stageName: props.stageName,
        entry: path.join(__dirname, "./start.ts"),
-       openAPISpec: specBuilder})
+       openAPISpec: specBuilder,
+      stackName: props.stackName})
     }
 } 
 

@@ -193,39 +193,39 @@ test("Pipeline with report creation permissions", () => {
   })
 })
 
-test("Pipeline with endpoints as environment variables", () => {
-  pipelineBuilder.withName("MembershipPipeline")
-  pipelineBuilder.withAcceptanceStage(
-    {
-      extractingSourceFrom: [{ provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection" }],
-      executingCommands: ["npm run test:component"],
-      exposingEnvVars: true
-    })
+// test("Pipeline with endpoints as environment variables", () => {
+//   pipelineBuilder.withName("MembershipPipeline")
+//   pipelineBuilder.withAcceptanceStage(
+//     {
+//       extractingSourceFrom: [{ provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection" }],
+//       executingCommands: ["npm run test:component"],
+//       exposingEnvVars: true
+//     })
 
-  const stack = pipelineBuilder.build()
-  const template = Template.fromStack(stack)
+//   const stack = pipelineBuilder.build()
+//   const template = Template.fromStack(stack)
 
-  template.hasResourceProperties("AWS::CodePipeline::Pipeline", {
-    Stages: Match.arrayWith([
-      Match.objectLike({
-        "Name": "AcceptanceTest", 
-        "Actions": Match.arrayWith([
-          Match.objectLike({
-            Configuration: Match.objectLike({
-              EnvironmentVariables: Match.serializedJson(Match.arrayWith([
-                Match.objectLike({
-                  name: "testFunction"
-                })
-              ]))
-            })
-          })
-        ])
-      })
-    ])
-  })
+//   template.hasResourceProperties("AWS::CodePipeline::Pipeline", {
+//     Stages: Match.arrayWith([
+//       Match.objectLike({
+//         "Name": "AcceptanceTest", 
+//         "Actions": Match.arrayWith([
+//           Match.objectLike({
+//             Configuration: Match.objectLike({
+//               EnvironmentVariables: Match.serializedJson(Match.arrayWith([
+//                 Match.objectLike({
+//                   name: "testFunction"
+//                 })
+//               ]))
+//             })
+//           })
+//         ])
+//       })
+//     ])
+//   })
   
-  expectCommandsToContain(stack, ["export testFunction=$testFunction"])
-})
+//   expectCommandsToContain(stack, ["export testFunction=$testFunction"])
+// })
 
 test("Pipeline with access to test resources", () => {
 
