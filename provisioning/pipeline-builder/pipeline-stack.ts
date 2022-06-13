@@ -57,7 +57,6 @@ export interface CommitStageProperties extends ExecutionStageProperties, StagePr
 }
 
 export interface AcceptanceStageProperties extends ExecutionStageProperties, StageProperties{
-  readonly exposingEnvVars?: boolean
 }
 
 export interface ProductionStageProperties extends StageProperties{
@@ -158,33 +157,14 @@ export class PipelineStack extends Stack {
 
     let commands: string[] = [this.buildStageEnvVarCommand("test")]
 
-    if(props.exposingEnvVars){
-      
-      console.log("envvar1 - " + JSON.stringify(deployedInfrastructure.envvars))
-       
-      let environmentVariableSetup: any = {}
+    let environmentVariableSetup: any = {}
 
-      for (const envvar of deployedInfrastructure.envvars)
-      {
-        environmentVariableSetup[envvar] = {type: BuildEnvironmentVariableType.PLAINTEXT, value: Fn.importValue(envvar)}
-      //buildStepSetup["envFromCfnOutputs"] = deployedInfrastructure.envvars
-      }
-
-      buildStepSetup["buildEnvironment"] = {environmentVariables: environmentVariableSetup}
-
-        // {environmentVariables: 
-        //   {"string": 
-        //     {type: BuildEnvironmentVariableType.PLAINTEXT, value: Fn.importValue("")}
-        //   } 
-        // }
-
-
-        console.log(buildStepSetup["buildEnvironment"])
-        // = deployedInfrastructure.envvars
-
-      //commands = commands.concat(this.buildEnvironmentVariableExportCommands(deployedInfrastructure.envvars))
-
+    for (const envvar of deployedInfrastructure.envvars)
+    {
+      environmentVariableSetup[envvar] = {type: BuildEnvironmentVariableType.PLAINTEXT, value: Fn.importValue(envvar)}
     }
+
+    buildStepSetup["buildEnvironment"] = {environmentVariables: environmentVariableSetup}
 
     if (props.withEnvironmentVariables != undefined)
     {
@@ -219,15 +199,6 @@ export class PipelineStack extends Stack {
         }
     }
     return role
-  }
-
-  private buildEnvironmentVariableExportCommands(envvars: string[]) {
-    let exportEnvCommands = Array()
-    let envName: keyof Record<string, CfnOutput>
-    for (envName in envvars) {
-      exportEnvCommands.push("export " + envName + "=$" + Fn.importValue(envName))
-    }
-    return exportEnvCommands
   }
 
   private buildEnvironmentVariableCommands(envvars: Record<string, any>) {

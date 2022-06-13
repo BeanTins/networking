@@ -14,32 +14,33 @@ async function main(): Promise<void>
 
   const NotificationEmailAddress = await new StageParameters("us-east-1").retrieve("NotificationEmailAddress")
 
-  const beantinsCredentials = new BeanTinsCredentials(app, "NetworkingDev-BeanTinsCredentials", {
+  const beantinsCredentials = new BeanTinsCredentials(app, "NetworkingDevCredentials", {
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-    stageName: "dev",
+    deploymentName: "NetworkingDev",
     storeTypeForSettings: StoreType.Output 
   })
 
-  const membershipEventBus = new MembershipEventBusFake(app, "NetworkingDev-MembershipEventBusFake", {
-    stageName: "dev",
+  const membershipEventBus = new MembershipEventBusFake(app, "NetworkingDevMembershipEventBusFake", {
+    deploymentName: "NetworkingDev",
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION }
   })
 
-  const emailListener = new EmailListenerStack(app, "NetworkingDev-EmailListener", {stageName: "dev"})
+  const emailListener = new EmailListenerStack(app, "NetworkingDevEmailListener", {deploymentName: "NetworkingDev"})
 
-  const eventListener = new EventListenerStack(app, "NetworkingDev-EventListener", {
-    stageName: "dev",
+  const eventListener = new EventListenerStack(app, "NetworkingDevEventListener", {
+    deploymentName: "NetworkingDev",
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
   })
   
   const stage = new NetworkingStage(app, "NetworkingDev", {
     stageName: "dev",
     notificationEmailAddress: NotificationEmailAddress,
-    membershipEventBusArn: Fn.importValue("MembershipEventBusFakeArndev"),
+    membershipEventBusArn: Fn.importValue("NetworkingDevMembershipEventBusFakeArn"),
     emailConfigurationSet: emailListener.ConfigSetName,
-    userPoolArn: Fn.importValue("UserPoolArndev"),
-    eventListenerQueueArn: Fn.importValue("EventListenerQueueArndev"),
+    userPoolArn: Fn.importValue("NetworkingDevUserPoolArn"),
+    eventListenerQueueArn: Fn.importValue("NetworkingDevEventListenerQueueArn"),
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+    stackNamePrepend: "NetworkingDev"
   })
 
   app.synth()

@@ -18,13 +18,13 @@ export class Entity{
 
 export class Conversation extends Entity {
 
-  private name: string|null
+  private name: string
   private participantIds: Set<string>
   private adminIds: Set<string>
 
   private constructor(name: string|null, participantIds: Set<string>, adminIds: Set<string>, id: string|null) {
     super(id)
-    this.name = name
+    this.name = name ?? ""
     this.participantIds = participantIds
     this.adminIds = adminIds
   }

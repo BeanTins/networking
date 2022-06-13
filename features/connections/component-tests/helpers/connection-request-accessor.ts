@@ -2,27 +2,30 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, ScanCommand, DeleteCommand, PutCommand } from "@aws-sdk/lib-dynamodb"
 import logger from "../../../../test-helpers/component-test-logger"
 
+interface ConnectionRequestParameters{
+  tableName: string
+}
 export class ConnectionRequestAccessor {
   
   private dynamoDB: DynamoDBClient
-  private connectionRequestTableName: string
+  private tableName: string
 
-  constructor(region: string)
+  constructor(region: string, parameters: ConnectionRequestParameters)
   {
     const client = new DynamoDBClient({region: region})
     this.dynamoDB = DynamoDBDocumentClient.from(client)
 
-    this.connectionRequestTableName = process.env.ConnectionRequestTable!
+    this.tableName = parameters.tableName
   }
 
   async clear()
   {
     const queryTableName = {
-        TableName: this.connectionRequestTableName
+        TableName: this.tableName
     }
     
     const items =  await this.dynamoDB.send(new ScanCommand(queryTableName))
-    const tableName = this.connectionRequestTableName
+    const tableName = this.tableName
     const dynamoDB = this.dynamoDB
   
     if (items.Items) {
@@ -52,7 +55,7 @@ export class ConnectionRequestAccessor {
     try
     {
       const items =  await this.dynamoDB.send(new PutCommand({
-          TableName: this.connectionRequestTableName,
+          TableName: this.tableName,
           Item: {
             "initiatingMemberId" : initiatingMemberId,
             "invitedMemberId" : invitedMemberId,
@@ -78,7 +81,7 @@ export class ConnectionRequestAccessor {
       ExpressionAttributeNames: 
        { "#initiatingMemberId": "initiatingMemberId",
          "#invitedMemberId": "invitedMemberId" },
-      TableName: this.connectionRequestTableName
+      TableName: this.tableName
     }
     logger.verbose(JSON.stringify(params))
     try{

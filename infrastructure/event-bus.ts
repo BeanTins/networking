@@ -1,15 +1,16 @@
-import {Stack, StackProps, CfnOutput} from "aws-cdk-lib"
+import {StackProps, CfnOutput} from "aws-cdk-lib"
 import { Construct } from "constructs"
 import {EventBus, Rule } from "aws-cdk-lib/aws-events"
 import {SqsQueue} from "aws-cdk-lib/aws-events-targets"
 import {Queue} from "aws-cdk-lib/aws-sqs"
 import {IPrincipal} from "aws-cdk-lib/aws-iam"
+import {EnvvarsStack} from "./envvars-stack"
 
 interface EventBusProps extends StackProps {
   stageName: string
 }
 
-export class NetworkingEventBus extends Stack {
+export class NetworkingEventBus extends EnvvarsStack {
   public readonly Arn: string
   public readonly Name: string
   private eventBus: EventBus
@@ -20,9 +21,7 @@ export class NetworkingEventBus extends Stack {
 
     this.Arn = this.eventBus.eventBusArn
     this.Name = this.eventBus.eventBusName
-    new CfnOutput(this, "EventBusArn" + props.stageName, {
-      value: this.eventBus.eventBusArn,
-    })
+    this.addEnvvar("Arn", this.eventBus.eventBusArn)
   }
 
   grantAccessTo(accessor: IPrincipal){

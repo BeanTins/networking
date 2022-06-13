@@ -2,27 +2,30 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, ScanCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb"
 import logger from "../../../../test-helpers/component-test-logger"
 
+interface MemberProjectionParameters{
+  tableName: string
+}
 export class MemberProjectionAccessor {
   
   private dynamoDB: DynamoDBDocumentClient
-  private memberProjectionName: string
+  private tableName: string
 
-  constructor(region: string)
+  constructor(region: string, parameters: MemberProjectionParameters)
   {
     const client = new DynamoDBClient({region: region})
     this.dynamoDB = DynamoDBDocumentClient.from(client)
-    this.memberProjectionName = process.env.MemberProjection!
-    logger.verbose(process.env.MemberProjection)
+    this.tableName = parameters.tableName
+    logger.verbose(this.tableName)
   }
 
   async clear()
   {
     const queryTableName = {
-        TableName: this.memberProjectionName
+        TableName: this.tableName
     }
     
     const items =  await this.dynamoDB.send(new ScanCommand(queryTableName))
-    const tableName = this.memberProjectionName
+    const tableName = this.tableName
     const dynamoDB = this.dynamoDB
   
     if (items.Items) {
@@ -63,7 +66,7 @@ export class MemberProjectionAccessor {
       FilterExpression: "#name IN ("+Object.keys(nameObject).toString()+ ")",
       ExpressionAttributeValues: nameObject,
       ExpressionAttributeNames: { "#name": "name" },
-      TableName: this.memberProjectionName
+      TableName: this.tableName
     }
     logger.verbose(JSON.stringify(params))
     try{

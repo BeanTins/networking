@@ -14,13 +14,13 @@ export class FakeMember
   id: string
   password: string
   private eventbridge: EventBridgeClient
-  private eventBusName: string
+  private eventBusArn: string
 
   
-  constructor(region: string, memberCredentials: MemberCredentialsAccessor)
+  constructor(region: string, memberCredentials: MemberCredentialsAccessor, eventBusArn: string)
   {
     this.eventbridge = new EventBridgeClient({region: region})
-    this.eventBusName = process.env.MembershipEventBusFakeArn!
+    this.eventBusArn = eventBusArn
 
     this.memberCredentials = memberCredentials
   }
@@ -71,7 +71,7 @@ export class FakeMember
       {
         Detail: JSON.stringify({name: name, email: email, id: id}),
         DetailType: "MemberActivatedEvent",
-        EventBusName: this.eventBusName,
+        EventBusName: this.eventBusArn,
         Source: "membership.beantins.com",
       }
     ]

@@ -2,26 +2,29 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, ScanCommand, DeleteCommand, PutCommand } from "@aws-sdk/lib-dynamodb"
 import logger from "../../../../test-helpers/component-test-logger"
 
+interface ConversationsParameters{
+  tableName: string
+}
 export class ConversationsAccessor {
   
   private dynamoDB: DynamoDBDocumentClient
-  private conversationsTableName: string
+  private tableName: string
 
-  constructor(region: string)
+  constructor(region: string, parameters: ConversationsParameters)
   {
     const client = new DynamoDBClient({region: region})
     this.dynamoDB = DynamoDBDocumentClient.from(client)
-    this.conversationsTableName = process.env.ConversationsTable!
+    this.tableName = parameters.tableName
   }
 
   async clear()
   {
     const queryTableName = {
-        TableName: this.conversationsTableName
+        TableName: this.tableName
     }
     
     const items =  await this.dynamoDB.send(new ScanCommand(queryTableName))
-    const tableName = this.conversationsTableName
+    const tableName = this.tableName
     const dynamoDB = this.dynamoDB
   
     if (items.Items) {

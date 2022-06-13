@@ -2,7 +2,7 @@ import {Table, AttributeType, StreamViewType, ProjectionType} from "aws-cdk-lib/
 import { StackProps, RemovalPolicy, CfnOutput } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import {IPrincipal} from "aws-cdk-lib/aws-iam"
-import {EnvvarsStack} from "../../../provisioning/envvars-stack"
+import {EnvvarsStack} from "../../../infrastructure/envvars-stack"
 
 interface ConnectionRequestTableProps extends StackProps {
   stageName: string;
@@ -27,12 +27,8 @@ export class ConnectionRequestTable extends EnvvarsStack {
       projectionType: ProjectionType.ALL,
     })
 
-    this.addEnvvar("ConnectionRequestTable", this.connectionRequests.tableName)
-    
-    new CfnOutput(this, "ConnectionRequstTableArn" + props.stageName, {
-      value: this.connectionRequests.tableArn,
-      exportName: "ConnectionRequestTableArn" + props.stageName,
-    })
+    this.addEnvvar("Name", this.connectionRequests.tableName)
+    this.addEnvvar("Arn", this.connectionRequests.tableArn)
   }
 
   get name(): string {

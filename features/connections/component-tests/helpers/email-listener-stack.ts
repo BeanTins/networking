@@ -1,6 +1,5 @@
 import {Stack, StackProps, CfnOutput} from "aws-cdk-lib"
 import { Construct } from "constructs"
-import {EventBus } from "aws-cdk-lib/aws-events"
 import {SqsSubscription} from "aws-cdk-lib/aws-sns-subscriptions"
 import {Queue} from "aws-cdk-lib/aws-sqs"
 import {Topic} from "aws-cdk-lib/aws-sns"
@@ -8,7 +7,7 @@ import {AwsCustomResource, AwsCustomResourcePolicy} from "aws-cdk-lib/custom-res
 import {PolicyStatement, Effect} from "aws-cdk-lib/aws-iam"
 
 interface EmailListenerProps extends StackProps {
-  stageName: string
+  deploymentName: string
 }
 
 export class EmailListenerStack extends Stack {
@@ -19,7 +18,7 @@ export class EmailListenerStack extends Stack {
   constructor(scope: Construct, id: string, props: EmailListenerProps) {
     super(scope, id, props)
 
-    this.ConfigSetName = "defaultConfigSet" + props.stageName
+    this.ConfigSetName = props.deploymentName + "defaultConfigSet"
 
     const sesPolicy = this.buildAccessPolicy()
 
@@ -29,13 +28,13 @@ export class EmailListenerStack extends Stack {
 
     this.buildEventDestination(emailNotificationsTopic, sesPolicy, configSet)
 
-    const queue = this.buildQueue(props.stageName)
+    const queue = this.buildQueue(props.deploymentName)
 
     emailNotificationsTopic.addSubscription(new SqsSubscription(queue))
   }
 
-  private buildQueue(stageName: string) {
-    const queueName = "EmailListenerQueueName" + stageName
+  private buildQueue(deploymentName: string) {
+    const queueName = deploymentName + "EmailListenerQueueName"
 
     const queue = new Queue(this, "EmailListenerQueue")
 
@@ -45,7 +44,7 @@ export class EmailListenerStack extends Stack {
       description: 'name of the queue used during testing for listening to sent emails'
     })
 
-    const queueArn = "EmailListenerQueueArn" + stageName
+    const queueArn = deploymentName + "EmailListenerQueueArn"
 
     new CfnOutput(this, queueArn, {
       value: queue.queueArn,

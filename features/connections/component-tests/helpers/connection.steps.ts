@@ -30,31 +30,38 @@ let eventListener: EventListenerClient
 let invitationId: string
 let initiatingMember: FakeMember
 let invitedMember: FakeMember
+let testEnvVarSetup: TestEnvVarSetup
 
 beforeAll(async()=> {
 
   try
   {
-    TestEnvVarSetup.configureVariable("ConnectionRequestEndpoint")
-    TestEnvVarSetup.configureVariable("ConnectionResponseEndpoint")
-    TestEnvVarSetup.configureVariable("MemberProjection")
-    TestEnvVarSetup.configureVariable("ConnectionRequestTable")
-    TestEnvVarSetup.configureVariable("ConnectionsTable")
-    TestEnvVarSetup.configureStageVariable("MembershipEventBusFakeArn")
-    TestEnvVarSetup.configureStageVariable("EmailListenerQueueName")
-    TestEnvVarSetup.configureStageVariable("UserPoolId")
-    TestEnvVarSetup.configureStageVariable("UserPoolMemberClientId")
-    TestEnvVarSetup.configureStageVariable("EventListenerQueueName")
+    testEnvVarSetup = new TestEnvVarSetup("Networking")
 
     BeanTinsEmail = await new StageParameters(AWS_REGION).retrieve("NotificationEmailAddress")
 
-    memberCredentials = new MemberCredentialsAccessor(AWS_REGION)
-    memberProjection = new MemberProjectionAccessor(AWS_REGION)
-    connectionRequests = new ConnectionRequestAccessor(AWS_REGION)
-    connections = new ConnectionsAccessor(AWS_REGION)
+    testEnvVarSetup.resolveVariable("UserPoolId")
+    testEnvVarSetup.resolveVariable("UserPoolMemberClientId")
+    memberCredentials = new MemberCredentialsAccessor(AWS_REGION, {
+      userPoolId: testEnvVarSetup.resolveVariable("UserPoolId"),
+      userPoolMemberClientId: testEnvVarSetup.resolveVariable("UserPoolMemberClientId")
+    })
+    memberProjection = new MemberProjectionAccessor(AWS_REGION, {
+      tableName: testEnvVarSetup.resolveVariable("MemberProjectionName")
+    })
+    connectionRequests = new ConnectionRequestAccessor(AWS_REGION, {
+      tableName: testEnvVarSetup.resolveVariable("ConnectionRequestTableName")
+    })
+    connections = new ConnectionsAccessor(AWS_REGION, {
+      tableName: testEnvVarSetup.resolveVariable("ConnectionsTableName")
+    })
 
-    emailListener = new EmailListenerQueueClient(AWS_REGION)
-    eventListener = new EventListenerClient(AWS_REGION)
+    emailListener = new EmailListenerQueueClient(AWS_REGION, {
+      queueName: testEnvVarSetup.resolveVariable("EmailListenerQueueName")
+    })
+    eventListener = new EventListenerClient(AWS_REGION, {
+      queueName: testEnvVarSetup.resolveVariable("EventListenerQueueName")
+    })
 
     await emailListener.clear()
     await eventListener.clear()
@@ -87,8 +94,8 @@ beforeEach(async () => {
   logger.verbose("*** Running test - " + currentTestName + " ***")
   jest.setTimeout(getTestTimeout(currentTestName))
   
-  initiatingMember = new FakeMember(AWS_REGION, memberCredentials)
-  invitedMember = new FakeMember(AWS_REGION, memberCredentials)
+  initiatingMember = new FakeMember(AWS_REGION, memberCredentials, testEnvVarSetup.resolveVariable("MembershipEventBusFakeArn"))
+  invitedMember = new FakeMember(AWS_REGION, memberCredentials, testEnvVarSetup.resolveVariable("MembershipEventBusFakeArn"))
   responseCode = 0
   responseMessage = ""
   await Promise.all([
@@ -150,7 +157,12 @@ export const connectionSteps: StepDefinitions = ({ given, and, when, then }) => 
     const idToken = await memberCredentials.requestIdToken(initiatingMember.email!, "p@ssw0rd")
 
     logger.verbose("id token  " + idToken)
-    const response = await requestConnection(initiatingMember.id, invitedMember!.id, idToken)
+    const response = await requestConnection({
+      endpoint: testEnvVarSetup.resolveVariable("ConnectionRequestCommandEndpoint"),
+      intiatingMemberId: initiatingMember.id,
+      invitedMemberId: invitedMember!.id,
+      idToken: idToken
+    })
 
     if (response != null)
     {
@@ -247,7 +259,12 @@ async function sendConnectionResponse(decision: "approve"|"reject"|"unknown") {
   let idToken = await memberCredentials.requestIdToken(invitedMember.email!, "p@ssw0rd")
 
   logger.verbose("id token  " + idToken)
-  const response = await connectionResponse(invitationId, decision, idToken)
+  const response = await connectionResponse({
+    endpoint: testEnvVarSetup.resolveVariable("ConnectionResponseCommandEndpoint"),
+    invitationId: invitationId,
+    decision: decision,
+    idToken: idToken
+  })
 
   if (response != null) {
     logger.verbose("responseCode - " + response.statusCode + ",message - " + JSON.stringify(response.body))

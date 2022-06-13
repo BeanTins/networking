@@ -3,26 +3,44 @@ import {readFileSync, readdirSync} from "fs"
 import * as path from "path"
 
 export class TestEnvVarSetup{
-  static configureStageVariable(envVarBaseName: string) {
-    const envVarName = envVarBaseName + TestEnvVarSetup.getStage()
   
-    if (process.env[envVarName] == undefined) {
-      process.env[envVarBaseName] = TestEnvVarSetup.resolveOutput(envVarName)
-    }
-    else {
-      process.env[envVarBaseName] = process.env[envVarName]
-    }
-  }
-  
-  static configureVariable(envVarName: string)
+  private serviceName: string
+  constructor(serviceName: string)
   {
-    if (process.env[envVarName] == undefined)
-    {
-      process.env[envVarName] = TestEnvVarSetup.resolveOutput(envVarName)
-    }
+    this.serviceName = serviceName
   }
 
-  static getStage()
+  resolveVariableWithAppendedStage(envVarBaseName: string) {
+    let variable: string
+    const envVarName = envVarBaseName + this.getStage()
+  
+    if (process.env[envVarName] == undefined) {
+      variable = this.resolveOutput(envVarName)
+    }
+    else {
+      variable = process.env[envVarName]!
+    }
+
+    return variable
+  }
+  
+  resolveVariable(envVarName: string)
+  {
+    let variable: string
+    const compositeEnvVarName = this.getDeploymentName() + envVarName
+    if (process.env[compositeEnvVarName] == undefined)
+    {
+      variable = this.resolveOutput(compositeEnvVarName)
+    }
+    else
+    {
+      variable = process.env[compositeEnvVarName]!
+    }
+
+    return variable
+  }
+
+  getStage()
   {
     let stage:string
 
@@ -37,8 +55,29 @@ export class TestEnvVarSetup{
 
     return stage
   }
+
+  getDeploymentName()
+  {
+    let deploymentName: string = this.serviceName
+    const stage = this.getStage()
+
+    if (stage == "dev")
+    {
+      deploymentName+= "Dev"
+    }
+    if (stage == "test")
+    {
+      deploymentName+= "Test"
+    }
+    if (stage == "prod")
+    {
+      deploymentName+= "Prod"
+    }
+
+    return deploymentName
+  }
   
-  static resolveOutput(targetOutputName: string)
+  resolveOutput(targetOutputName: string)
   {
     var output: string | undefined
 

@@ -3,10 +3,13 @@ import  { SQSClient,
   ReceiveMessageCommand, 
   GetQueueUrlCommand, 
   ReceiveMessageResult,
-  DeleteMessageCommand,
-PurgeQueueCommand } from "@aws-sdk/client-sqs"
+  DeleteMessageCommand } from "@aws-sdk/client-sqs"
 import logger from "../../../../test-helpers/component-test-logger"
 
+interface EmailListenerParameters
+{
+  queueName: string
+}
 export interface EventResponse
 {
   type: string
@@ -16,8 +19,10 @@ export interface EventResponse
 export class EmailListenerQueueClient {
   private sqsClient: SQSClient
   private url: string
-  constructor(region: string) {
+  private queueName: string
+  constructor(region: string, parameters: EmailListenerParameters) {
     this.sqsClient = new SQSClient({ region: region })
+    this.queueName = parameters.queueName
   }
 
   async clear()
@@ -58,7 +63,7 @@ export class EmailListenerQueueClient {
     if (this.url == undefined)
     {
       const input = {
-        QueueName: process.env.EmailListenerQueueName,
+        QueueName: this.queueName,
       }
   
       try {
@@ -179,7 +184,5 @@ export class EmailListenerQueueClient {
       logger.error("Failed to delete message -  " + error)
       throw error
     }
-
-    return event
   }  
 }

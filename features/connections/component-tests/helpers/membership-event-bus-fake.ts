@@ -5,7 +5,7 @@ import {SqsQueue} from "aws-cdk-lib/aws-events-targets"
 import {Queue} from "aws-cdk-lib/aws-sqs"
 
 interface EventBusProps extends StackProps {
-  stageName: string
+  deploymentName: string
 }
 
 export class MembershipEventBusFake extends Stack {
@@ -15,11 +15,11 @@ export class MembershipEventBusFake extends Stack {
   constructor(scope: Construct, id: string, props: EventBusProps) {
     super(scope, id, props)
 
-    this.eventBus = new EventBus(this, "Membership"  + props.stageName + "_EventBusFake")
+    this.eventBus = new EventBus(this, props.deploymentName + "MembershipEventBusFake")
 
-    new CfnOutput(this, "MembershipEventBusFakeArn" + props.stageName, {
+    new CfnOutput(this, props.deploymentName + "MembershipEventBusFakeArn", {
       value: this.eventBus.eventBusArn,
-      exportName: "MembershipEventBusFakeArn" + props.stageName
+      exportName: props.deploymentName + "MembershipEventBusFakeArn"
     })
 
     this.Arn = this.eventBus.eventBusArn

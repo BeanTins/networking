@@ -1,41 +1,44 @@
 import got from "got"
 import logger from "../../../../test-helpers/component-test-logger"
 
-export async function startConversation(
-    initiatingMemberId: string, 
-    invitedMemberIds: string[]|null, 
-    adminMemberIds: string[],
-    name: string, 
-    idToken: string | undefined)
+interface ConversationsParameters{
+  endpoint: string
+  initiatingMemberId: string, 
+  invitedMemberIds: string[]|null, 
+  adminMemberIds?: string[],
+  name?: string, 
+  idToken: string | undefined
+}
+export async function startConversation(parameters: ConversationsParameters)
 {
     let responseBody: any = {}
     let requestBody: any = {}
     
-    requestBody.initiatingMemberId = initiatingMemberId
+    requestBody.initiatingMemberId = parameters.initiatingMemberId
 
-    if (invitedMemberIds != undefined)
+    if (parameters.invitedMemberIds != undefined)
     {
-      requestBody.invitedMemberIds = invitedMemberIds
+      requestBody.invitedMemberIds = parameters.invitedMemberIds
     }
 
-    if (adminMemberIds != undefined)
+    if (parameters.adminMemberIds != undefined)
     {
-      requestBody.adminMemberIds = adminMemberIds
+      requestBody.adminMemberIds = parameters.adminMemberIds
     }
 
-    if (name != undefined)
+    if (parameters.name != undefined)
     {
-      requestBody.name = name
+      requestBody.name = parameters.name
     }
 
     try{
-        const url = process.env.ConversationStartEndpoint
+        const url = parameters.endpoint
 
         logger.verbose("Conversation start url - " + url + " with body " + JSON.stringify(requestBody))
 
         responseBody = await got.post(url!, {
             headers: {
-                Authorization: "Bearer " + idToken
+                Authorization: "Bearer " + parameters.idToken
             },
             json: requestBody,
             throwHttpErrors: false,

@@ -1,25 +1,31 @@
 import got from "got"
 import logger from "../../../../test-helpers/component-test-logger"
 
-export async function requestConnection(intiatingMemberId: string | null, invitedMemberId: string | null, idToken: string | undefined)
+interface ConnectionRequestParameters{
+    endpoint: string
+    intiatingMemberId: string | null
+    invitedMemberId: string | null
+    idToken: string | undefined}
+
+export async function requestConnection(parameters: ConnectionRequestParameters)
 {
     let responseBody: any = {}
     let requestBody: any = {}
-    requestBody.initiatingMemberId = intiatingMemberId
+    requestBody.initiatingMemberId = parameters.intiatingMemberId
 
-    if (invitedMemberId != undefined)
+    if (parameters.invitedMemberId != undefined)
     {
-      requestBody.invitedMemberId = invitedMemberId
+      requestBody.invitedMemberId = parameters.invitedMemberId
     }
 
     try{
-        const url = process.env.ConnectionRequestEndpoint
+        const url = parameters.endpoint
 
         logger.verbose("Request connection at url - " + url + " with body " + JSON.stringify(requestBody))
 
         responseBody = await got.post(url!, {
             headers: {
-                Authorization: "Bearer " + idToken
+                Authorization: "Bearer " + parameters.idToken
             },
             json: requestBody,
             throwHttpErrors: false,

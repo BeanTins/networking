@@ -1,8 +1,8 @@
 import {Table, AttributeType, StreamViewType} from "aws-cdk-lib/aws-dynamodb"
-import { StackProps, RemovalPolicy, CfnOutput } from "aws-cdk-lib"
+import { StackProps, RemovalPolicy } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import {IPrincipal} from "aws-cdk-lib/aws-iam"
-import {EnvvarsStack} from "../../../provisioning/envvars-stack"
+import {EnvvarsStack} from "../../../infrastructure/envvars-stack"
 
 interface ConversationsRequestTableProps extends StackProps {
   stageName: string;
@@ -18,12 +18,8 @@ export class ConversationsTable extends EnvvarsStack {
       stream: StreamViewType.NEW_AND_OLD_IMAGES,
     })
 
-    this.addEnvvar("ConversationsTable", this.conversations.tableName)
-    
-    new CfnOutput(this, "ConversationsTableArn" + props.stageName, {
-      value: this.conversations.tableArn,
-      exportName: "ConversationsTableArn" + props.stageName,
-    })
+    this.addEnvvar("Name", this.conversations.tableName)
+    this.addEnvvar("Arn", this.conversations.tableArn)
   }
 
   get name(): string {

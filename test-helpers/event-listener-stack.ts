@@ -3,7 +3,7 @@ import { Stack, App, StackProps, CfnOutput, Duration} from "aws-cdk-lib"
 import {ServicePrincipal} from "aws-cdk-lib/aws-iam"
 
 interface EventListenerQueueProps extends StackProps {
-  stageName: string
+  deploymentName: string
 }
 
 export class EventListenerStack extends Stack {
@@ -11,11 +11,11 @@ export class EventListenerStack extends Stack {
   constructor(scope: App, id: string, props: EventListenerQueueProps) {
     super(scope, id, props)
 
-    this.queue = new Queue(this, "EventListener" + props.stageName, {retentionPeriod: Duration.hours(1)});
+    this.queue = new Queue(this, props.deploymentName + "EventListener", {retentionPeriod: Duration.hours(1)});
 
     this.queue.grantSendMessages(new ServicePrincipal("events.amazonaws.com"))
 
-    const queueName = "EventListenerQueueName" + props.stageName
+    const queueName = props.deploymentName + "EventListenerQueueName"
 
     new CfnOutput(this, queueName, {
       value: this.queue.queueName,
@@ -23,7 +23,7 @@ export class EventListenerStack extends Stack {
       description: 'name of the queue used during testing for listening to events'
     })
 
-    const queueArn = "EventListenerQueueArn" + props.stageName
+    const queueArn = props.deploymentName + "EventListenerQueueArn"
 
     new CfnOutput(this, queueArn, {
       value: this.queue.queueArn,

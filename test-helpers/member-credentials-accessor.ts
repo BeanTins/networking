@@ -9,18 +9,26 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider"
 import logger from "./component-test-logger"
 
+interface CredentialParameters
+{
+  userPoolId: string
+  userPoolMemberClientId: string
+}
+
 export class MemberCredentialsAccessor {
   private client: CognitoIdentityProviderClient
+  private parameters: CredentialParameters
 
-  constructor(region: string)
+  constructor(region: string, parameters: CredentialParameters)
   {
     this.client = new CognitoIdentityProviderClient({region: region})
+    this.parameters = parameters
   }
 
   async clear()
   {
     var listParams = {
-      "UserPoolId": process.env.UserPoolId!
+      "UserPoolId": this.parameters.userPoolId
    }
 
    try
@@ -42,7 +50,7 @@ export class MemberCredentialsAccessor {
   private async deleteMember(username: string) {
     const params = {
       Username: username,
-      UserPoolId: process.env.UserPoolId!
+      UserPoolId: this.parameters.userPoolId
     }
 
     try {
@@ -60,7 +68,7 @@ export class MemberCredentialsAccessor {
     {
       var confirmSignupParams = {
         Username: email,
-        UserPoolId: process.env.UserPoolId!
+        UserPoolId: this.parameters.userPoolId
       }
       logger.verbose(confirmSignupParams)
       const response = await this.client.send(new AdminConfirmSignUpCommand(confirmSignupParams))
@@ -68,7 +76,7 @@ export class MemberCredentialsAccessor {
     }
     catch(error)
     {
-      logger.error("Failed to confirm signup for " + name + " - " + error)
+      logger.error("Failed to confirm signup for " + email + " - " + error)
     }
 
   }
@@ -79,8 +87,8 @@ export class MemberCredentialsAccessor {
 
     var authParams = {
       AuthFlow: "ADMIN_NO_SRP_AUTH",
-      ClientId: process.env.UserPoolMemberClientId!,
-      UserPoolId: process.env.UserPoolId!,
+      ClientId: this.parameters.userPoolMemberClientId,
+      UserPoolId: this.parameters.userPoolId,
       AuthParameters: {
           USERNAME: email,
           PASSWORD: password
@@ -90,13 +98,15 @@ export class MemberCredentialsAccessor {
     try{
       const auth2Params = {
         AuthFlow: "USER_PASSWORD_AUTH",
-        ClientId: process.env.UserPoolMemberClientId!,
+        ClientId: this.parameters.userPoolMemberClientId,
+        UserPoolId: this.parameters.userPoolId,
         AuthParameters: {
             USERNAME: email,
             PASSWORD: password
         }
       }
       
+      logger.verbose("InitiateAuth with "  + JSON.stringify(auth2Params))
       const sessionData = await this.client.send(new InitiateAuthCommand(auth2Params))
       logger.verbose("session " + JSON.stringify(sessionData))
       idToken = sessionData.AuthenticationResult!.IdToken
@@ -115,13 +125,13 @@ export class MemberCredentialsAccessor {
     try
     {
       var params = {
-        ClientId: process.env.UserPoolMemberClientId!,
+        ClientId: this.parameters.userPoolMemberClientId,
         Username: email,
         Password: password
       }
   
       logger.verbose("Signup " + email + " with password " + password)
-      await this.client.send(new SignUpCommand(params))
+      logger.verbose(await this.client.send(new SignUpCommand(params)))
     }
     catch(error)
     {

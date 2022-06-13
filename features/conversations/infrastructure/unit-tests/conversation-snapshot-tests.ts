@@ -44,6 +44,15 @@ test("conversation to snapshot", async() => {
   expect(snapshot.adminIds).toEqual(new Set(["1234"]))
 })
 
+test("conversation to snapshot with null name", async() => {
+  
+  var conversation: Conversation = Conversation.start(new Set(["1234", "4321"]), null, new Set(["1234"]))
+
+  const snapshot = ConversationSnapshot.createFromConversation(conversation)
+
+  expect(snapshot.name).toBe("")
+})
+
 test("snapshot has identical set of properties to conversation", async() => {
   
   const conversation = Conversation.start(new Set(["1234", "4321"]), "knitting club", new Set(["1234"]))

@@ -42,7 +42,7 @@ async function main(): Promise<void>
 
   const pipeline = new PipelineBuilder(app, networkingFactory)
 
-  pipeline.withName("NetworkingPipeline")
+  pipeline.withName("Networking")
 
   pipeline.withCommitStage(
     {
@@ -65,12 +65,8 @@ async function main(): Promise<void>
                                   UserPoolIdtest: Fn.importValue("userPoolIdtest"),
                                   UserPoolMemberClientId: Fn.importValue("UserPoolMemberClientIdtest")},
       reporting: {fromDirectory: "reports/component-tests", withFiles: ["test-results.xml", "tests.log"], exportingTo: ExportType.S3},
-      exposingEnvVars: true,
       withPermissionToAccess: [
         {resource: testConfig.memberProjectionTableArn, withAllowableOperations: ["dynamodb:*"]},
-        {resource: testConfig.connectionsTableArn, withAllowableOperations: ["dynamodb:*"]},
-        {resource: testConfig.connectionRequestTableArn, withAllowableOperations: ["dynamodb:*"]},
-        {resource: testConfig.conversationsTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.userPoolArn, withAllowableOperations: ["cognito-idp:*"]},
         {resource: Fn.importValue("EventListenerQueueArntest"), withAllowableOperations: ["sqs:*"]},
         {resource: Fn.importValue("EmailListenerQueueArntest"), withAllowableOperations: ["sqs:*"]}
@@ -106,23 +102,23 @@ async function main(): Promise<void>
 main().catch(console.error)
 
 function provisionTestResources(app: App) {
-  const eventListenerQueue = new EventListenerStack(app, "NetworkingTest-EventListenerQueue", {
-    stageName: "test",
+  const eventListenerQueue = new EventListenerStack(app, "NetworkingPipelineTest-EventListenerQueue", {
+    deploymentName: "NetworkingTest",
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
   })
-  const emailListenerQueue = new EmailListenerStack(app, "NetworkingTest-EmailListenerQueue", {
-    stageName: "test",
+  const emailListenerQueue = new EmailListenerStack(app, "NetworkingPipelineTest-EmailListenerQueue", {
+    deploymentName: "NetworkingTest",
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
   })
 
-  const beanTinsCredentials = new BeanTinsCredentials(app, "NetworkingTest-Credentials", {
+  const beanTinsCredentials = new BeanTinsCredentials(app, "NetworkingPipelineTest-Credentials", {
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-    stageName: "test",
+    deploymentName: "test",
     storeTypeForSettings: StoreType.Output
   })
 
-  const membershipEventBus = new MembershipEventBusFake(app, "NetworkingTest-MembershipEventBusFake", {
-    stageName: "test",
+  const membershipEventBus = new MembershipEventBusFake(app, "NetworkingPipelineTest-MembershipEventBusFake", {
+    deploymentName: "NetworkingTest",
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION }
   })
 

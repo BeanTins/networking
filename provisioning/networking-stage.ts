@@ -7,15 +7,13 @@ import { ConnectionRequestTable } from "../features/connections/infrastructure/c
 import { ConnectionsTable } from "../features/connections/infrastructure/connections-table"
 import { ConversationsTable } from "../features/conversations/infrastructure/conversations-table"
 import { DeploymentStage } from "./pipeline-builder/deployment-stage"
-import { CfnOutput, StageProps, Stage } from "aws-cdk-lib"
+import { StageProps, Stage } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import { ActivatedMemberHandler } from "../features/connections/activated-member-handler-stack"
 import { UnspecifiedRequestHandler } from "../features/connections/unspecified-request-handler-stack"
 import { NetworkingEventBus } from "../infrastructure/event-bus"
 import { ConversationStartCommand} from "../features/conversations/start-stack"
 import { ConversationStartedPublisher } from "../features/conversations/started-publisher-stack"
-import { EnvvarsStack } from "./envvars-stack"
-import { LambdaEndpoint } from "./lambda-endpoint"
 
 interface NetworkingStageProps extends StageProps{
   stageName: string
@@ -41,24 +39,32 @@ export class NetworkingStage extends Stage implements DeploymentStage{
   private conversationStartedPublisher: ConversationStartedPublisher
   private memberProjection: MemberProjection
   private eventBus: NetworkingEventBus
-  private stackNamePrepend: string|undefined
+  private customStackNamePrepend: string|undefined
   private _envvars: string[]
 
   get envvars(): string[] {
     return this._envvars
   }
   
-  createStack<Type, PropType>(type: (new (scope: Construct, id: string, props: PropType) => Type), props: PropType): Type {
-    //@ts-ignore
-    props.stackName = this.stackNamePrepend + "-" + type.name
-    const stack = new type(this, type.name, props)
+  createStack<Type, PropType>(type: (new (scope: Construct, id: string, props: PropType) => Type), props?: PropType): Type {
+    
+    if (this.customStackNamePrepend != undefined)
+    {
+      //@ts-ignore
+      props.stackName = this.customStackNamePrepend + type.name
+    }
 
-    //if (stack instanceof(EnvvarsStack) || stack instanceof(LambdaEndpoint))
+    let passedInProperties = props
+    if (props == undefined)
+    {
+      //@ts-ignore
+      passedInProperties = {}
+    }
+    const stack = new type(this, type.name, passedInProperties!)
+
     //@ts-ignore
     if (stack.envvars != undefined)
     {
-      // @ts-ignore
-      console.log("certe2 - " + stack.stackName)
       // @ts-ignore
       this._envvars = this._envvars.concat(stack.envvars)
     }
@@ -71,7 +77,7 @@ export class NetworkingStage extends Stage implements DeploymentStage{
     super(scope, id, props)
 
     this._envvars = []
-    this.stackNamePrepend = props.stackNamePrepend
+    this.customStackNamePrepend = props.stackNamePrepend
     this.memberProjection = this.createStack(MemberProjection, { stageName: props.stageName })
 
     this.eventBus = this.createStack(NetworkingEventBus, { stageName: props.stageName })
@@ -109,8 +115,7 @@ export class NetworkingStage extends Stage implements DeploymentStage{
 
   private buildConnectionInfrastructure(props: NetworkingStageProps) {
     this.connectionRequestTable = this.createStack(ConnectionRequestTable, { stageName: props.stageName })
-    this.connectionsTable = this.createStack(ConnectionsTable, { stageName: props.stageName })
-
+    this.connectionsTable = this.createStack(ConnectionsTable, {})
     this.connectionRequest = this.createStack(ConnectionRequestCommand,
       {
         memberProjectionName: this.memberProjection.name,

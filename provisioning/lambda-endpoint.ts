@@ -4,7 +4,7 @@ import { Construct } from "constructs"
 import { SpecRestApi, ApiDefinition } from "aws-cdk-lib/aws-apigateway"
 import { Function, Runtime } from "aws-cdk-lib/aws-lambda"
 import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs"
-import {EnvvarsStack} from "./envvars-stack"
+import {EnvvarsStack} from "../infrastructure/envvars-stack"
 import {OpenAPISpecBuilder, HttpMethod} from "../infrastructure/open-api-spec"
 import { APIGatewayRequestValidator } from "../infrastructure/api-gateway-request-validator"
 import { APIGatewayRequestValidators } from "../infrastructure/api-gateway-request-validators"
@@ -58,8 +58,7 @@ export class LambdaEndpoint extends EnvvarsStack {
 
     const endpointPath = Object.keys(openAPI.paths)[0]
     
-    this.addEnvvar(props.name + "Endpoint", this.restApi.urlForPath(endpointPath))
-
+    this.addEnvvar("Endpoint", this.restApi.urlForPath(endpointPath))
   }
 
   private buildConstructName(constructType: string, props: LambdaEndpointProps) {

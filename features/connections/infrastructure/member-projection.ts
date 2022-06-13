@@ -1,8 +1,8 @@
 import {Table, AttributeType} from "aws-cdk-lib/aws-dynamodb"
-import { StackProps, RemovalPolicy, CfnOutput } from "aws-cdk-lib"
+import { StackProps, RemovalPolicy } from "aws-cdk-lib"
 import { Construct } from "constructs"
 import {IPrincipal} from "aws-cdk-lib/aws-iam"
-import {EnvvarsStack} from "../../../provisioning/envvars-stack" 
+import {EnvvarsStack} from "../../../infrastructure/envvars-stack" 
 
 interface MemberProjectionProps extends StackProps {
   stageName: string;
@@ -19,12 +19,9 @@ export class MemberProjection extends EnvvarsStack {
       removalPolicy: RemovalPolicy.DESTROY,
     })
 
-    this.addEnvvar("MemberProjection", this.memberProjection.tableName)
-    
-    new CfnOutput(this, "MemberProjectionArn" + props?.stageName, {
-      value: this.memberProjection.tableArn,
-      exportName: "MemberProjectionArn" + props?.stageName,
-    })
+    this.addEnvvar("Name", this.memberProjection.tableName)
+
+    this.addEnvvar("Arn", this.memberProjection.tableName)
   }
 
   get name(): string {
