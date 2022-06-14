@@ -20,7 +20,7 @@
     "test:unit": "jest --projects jest.unit.config.ts",
     "deploy": "npx cdk deploy NetworkingDev* NetworkingDev/* --app \"npx ts-node provisioning/networking-dev.ts\" --outputs-file awsDeploy_outputs.json --require-approval never",
     "destroy": "npx cdk destroy NetworkingDev* NetworkingDev/* --app \"npx ts-node provisioning/networking-dev.ts\" --require-approval never",
-    "deploy:pipeline": "npx cdk deploy NetworkingTest* Networking/*/*  Networking --app \"npx ts-node --prefer-ts-exts provisioning/networking-pipeline.ts\" --require-approval never;npx cdk deploy NetworkingTest-* NetworkingPipeline --app \"npx ts-node --prefer-ts-exts provisioning/networking-pipeline.ts\" --require-approval never",
+    "deploy:pipeline": "npx cdk deploy NetworkingTest* Networking/*/* --app \"npx ts-node --prefer-ts-exts provisioning/networking-pipeline.ts\" --require-approval never;npx cdk deploy Networking --app \"npx ts-node --prefer-ts-exts provisioning/networking-pipeline.ts\" --require-approval never",
     "synth": "npx cdk synth --app \"npx ts-node --prefer-ts-exts provisioning/networking-dev.ts\"",
     "synth:pipeline": "npx cdk synth --all --app \"npx ts-node --prefer-ts-exts provisioning/networking-pipeline.ts\"",
     "destroy:pipeline": "npx cdk destroy --all --app \"npx ts-node --prefer-ts-exts provisioning/networking-pipeline.ts\"",
