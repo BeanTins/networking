@@ -17,7 +17,7 @@ export class ConnectionsTable extends EnvvarsStack {
     })
 
     this.addEnvvar("Name", this.connections.tableName)
-    this.addEnvvar("Arn", this.connections.tableName)
+    this.addEnvvar("Arn", this.connections.tableArn)
   }
 
   get name(): string {
