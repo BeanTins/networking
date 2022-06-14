@@ -68,6 +68,9 @@ async function main(): Promise<void>
       reporting: {fromDirectory: "reports/component-tests", withFiles: ["test-results.xml", "tests.log"], exportingTo: ExportType.S3},
       withPermissionToAccess: [
         {resource: testConfig.memberProjectionTableArn, withAllowableOperations: ["dynamodb:*"]},
+        {resource: testConfig.connectionsTableArn, withAllowableOperations: ["dynamodb:*"]},
+        {resource: testConfig.connectionRequestTableArn, withAllowableOperations: ["dynamodb:*"]},
+        {resource: testConfig.conversationsTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.userPoolArn, withAllowableOperations: ["cognito-idp:*"]},
         {resource: Fn.importValue("NetworkingTestEventListenerQueueArn"), withAllowableOperations: ["sqs:*"]},
         {resource: Fn.importValue("NetworkingTestEmailListenerQueueArn"), withAllowableOperations: ["sqs:*"]},
