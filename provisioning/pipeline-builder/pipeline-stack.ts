@@ -164,12 +164,14 @@ export class PipelineStack extends Stack {
       environmentVariableSetup[envvar] = {type: BuildEnvironmentVariableType.PLAINTEXT, value: Fn.importValue(envvar)}
     }
 
-    buildStepSetup["buildEnvironment"] = {environmentVariables: environmentVariableSetup}
-
     if (props.withEnvironmentVariables != undefined)
     {
-      commands = commands.concat(this.buildEnvironmentVariableCommands(props.withEnvironmentVariables))
+      for (const [name, value] of Object.entries(props.withEnvironmentVariables)) {
+        environmentVariableSetup[name] = {type: BuildEnvironmentVariableType.PLAINTEXT, value: value}
+      }
     }
+
+    buildStepSetup["buildEnvironment"] = {environmentVariables: environmentVariableSetup}
 
     commands = commands.concat(props.executingCommands)
 
@@ -242,17 +244,25 @@ export class PipelineStack extends Stack {
     
     let buildStepSetup: any = this.buildStepSetupForSourceCode(commitStageProps.extractingSourceFrom)
 
-
     let commands = [this.buildStageEnvVarCommand("commit")]
-
-    if (commitStageProps.withEnvironmentVariables != undefined)
-    {
-      commands = commands.concat(this.buildEnvironmentVariableCommands(commitStageProps.withEnvironmentVariables))
-    }
 
     commands = commands.concat(commitStageProps.executingCommands)
 
     buildStepSetup["commands"] = commands
+
+    let environmentVariableSetup: any = {}
+
+    if (commitStageProps.withEnvironmentVariables != undefined)
+    {
+      if (commitStageProps.withEnvironmentVariables != undefined)
+      {
+        for (const [name, value] of Object.entries(commitStageProps.withEnvironmentVariables)) {
+          environmentVariableSetup[name] = {type: BuildEnvironmentVariableType.PLAINTEXT, value: value}
+        }
+      }
+
+      buildStepSetup["buildEnvironment"] = {environmentVariables: environmentVariableSetup}
+    }
 
     buildStepSetup["role"] = this.buildStagePermissionsRole(pipelineName + "CommitExecutionRole", 
     commitStageProps.withPermissionToAccess)

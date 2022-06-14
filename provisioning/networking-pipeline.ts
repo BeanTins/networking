@@ -60,20 +60,20 @@ async function main(): Promise<void>
       extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "networking", branch: "main", accessIdentifier: sourceCodeArnConnection},
                             { provider: SCM.GitHub, owner: "BeanTins", repository: "credentials", branch: "main", accessIdentifier: sourceCodeArnConnection }],
       executingCommands: ["cd ..\/credentials", "npm ci", "cd - ", "npm ci", "npm run test:component"],
-      withEnvironmentVariables : {EventListenerQueueNametest: Fn.importValue("EventListenerQueueNametest"),
-                                  EmailListenerQueueNametest: Fn.importValue("EmailListenerQueueNametest"),
-                                  UserPoolIdtest: Fn.importValue("userPoolIdtest"),
-                                  UserPoolMemberClientId: Fn.importValue("UserPoolMemberClientIdtest")},
+      withEnvironmentVariables : {NetworkingTestEventListenerQueueName: Fn.importValue("NetworkingTestEventListenerQueueName"),
+                                  NetworkingTestEmailListenerQueueName: Fn.importValue("NetworkingTestEmailListenerQueueName"),
+                                  NetworkingTestUserPoolId: Fn.importValue("NetworkingTestUserPoolId"),
+                                  NetworkingTestUserPoolMemberClientId: Fn.importValue("NetworkingTestUserPoolMemberClientId")},
       reporting: {fromDirectory: "reports/component-tests", withFiles: ["test-results.xml", "tests.log"], exportingTo: ExportType.S3},
       withPermissionToAccess: [
         {resource: testConfig.memberProjectionTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.userPoolArn, withAllowableOperations: ["cognito-idp:*"]},
-        {resource: Fn.importValue("EventListenerQueueArntest"), withAllowableOperations: ["sqs:*"]},
-        {resource: Fn.importValue("EmailListenerQueueArntest"), withAllowableOperations: ["sqs:*"]}
+        {resource: Fn.importValue("NetworkingTestEventListenerQueueArn"), withAllowableOperations: ["sqs:*"]},
+        {resource: Fn.importValue("NetworkingTestEmailListenerQueueArn"), withAllowableOperations: ["sqs:*"]}
       ],
       withCustomDefinitions: {userPoolArn: testConfig.userPoolArn, 
-                              eventListenerQueueArn: Fn.importValue("EventListenerQueueArntest"),
-                              membershipEventBusArn: Fn.importValue("MembershipEventBusFakeArntest"),
+                              eventListenerQueueArn: Fn.importValue("NetworkingTestEventListenerQueueArn"),
+                              membershipEventBusArn: Fn.importValue("NetworkingTestMembershipEventBusFakeArn"),
                               emailConfigurationSet: testResources.emailListenerQueue.ConfigSetName,
                               notificationEmailAddress: testConfig.notificationEmailAddress} 
     }
@@ -86,7 +86,7 @@ async function main(): Promise<void>
         {resource: "*", withAllowableOperations: ["ssm:GetParameter"]},
         {resource: prodConfig.userPoolArn, withAllowableOperations: ["cognito-idp:*"]}],
       withCustomDefinitions: {userPoolArn: prodConfig.userPoolArn, 
-                              membershipEventBusArn: Fn.importValue("MembershipEventBusFakeArntest")} // this needs to be the real prod event bus retrieved from parameter store
+                              membershipEventBusArn: Fn.importValue("NetworkingTestMembershipEventBusFakeArn")} // this needs to be the real prod event bus retrieved from parameter store
     }
   )
 
@@ -102,22 +102,22 @@ async function main(): Promise<void>
 main().catch(console.error)
 
 function provisionTestResources(app: App) {
-  const eventListenerQueue = new EventListenerStack(app, "NetworkingPipelineTest-EventListenerQueue", {
+  const eventListenerQueue = new EventListenerStack(app, "NetworkingTestEventListenerQueue", {
     deploymentName: "NetworkingTest",
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
   })
-  const emailListenerQueue = new EmailListenerStack(app, "NetworkingPipelineTest-EmailListenerQueue", {
+  const emailListenerQueue = new EmailListenerStack(app, "NetworkingTestEmailListenerQueue", {
     deploymentName: "NetworkingTest",
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
   })
 
-  const beanTinsCredentials = new BeanTinsCredentials(app, "NetworkingPipelineTest-Credentials", {
+  const beanTinsCredentials = new BeanTinsCredentials(app, "NetworkingTestCredentials", {
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-    deploymentName: "test",
+    deploymentName: "NetworkingTest",
     storeTypeForSettings: StoreType.Output
   })
 
-  const membershipEventBus = new MembershipEventBusFake(app, "NetworkingPipelineTest-MembershipEventBusFake", {
+  const membershipEventBus = new MembershipEventBusFake(app, "NetworkingTestMembershipEventBusFake", {
     deploymentName: "NetworkingTest",
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION }
   })
@@ -132,11 +132,11 @@ function provisionTestResources(app: App) {
 
 async function getTestConfig() : Promise<StageConfiguration>
 {
-  return {memberProjectionTableArn: Fn.importValue("MemberProjectionArntest"),
-          connectionRequestTableArn: Fn.importValue("ConnectionRequestTableArntest"),
-          connectionsTableArn: Fn.importValue("ConnectionsTableArntest"),
-          conversationsTableArn: Fn.importValue("ConversationsTableArntest"),
-          userPoolArn: Fn.importValue("userPoolArntest"),
+  return {memberProjectionTableArn: Fn.importValue("NetworkingTestMemberProjectionArn"),
+          connectionRequestTableArn: Fn.importValue("NetworkingTestConnectionRequestTableArn"),
+          connectionsTableArn: Fn.importValue("NetworkingTestConnectionsTableArn"),
+          conversationsTableArn: Fn.importValue("NetworkingTestConversationsTableArn"),
+          userPoolArn: Fn.importValue("NetworkingTestUserPoolArn"),
           notificationEmailAddress: await new StageParameters("us-east-1").retrieveFromStage("NotificationEmailAddress", "test")}
 }
 

@@ -85,7 +85,7 @@ test("Pipeline with commands to build", () => {
   expectCommandsToContain(stack, ["npm ci"])
 })
 
-test("Pipeline with environment variables", () => {
+test.skip("Pipeline with environment variables", () => {
   pipelineBuilder.withName("MembershipPipeline")
   pipelineBuilder.withCommitStage({extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection"}],
                                    executingCommands: ["npm ci"],
