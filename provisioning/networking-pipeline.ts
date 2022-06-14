@@ -63,13 +63,15 @@ async function main(): Promise<void>
       withEnvironmentVariables : {NetworkingTestEventListenerQueueName: Fn.importValue("NetworkingTestEventListenerQueueName"),
                                   NetworkingTestEmailListenerQueueName: Fn.importValue("NetworkingTestEmailListenerQueueName"),
                                   NetworkingTestUserPoolId: Fn.importValue("NetworkingTestUserPoolId"),
-                                  NetworkingTestUserPoolMemberClientId: Fn.importValue("NetworkingTestUserPoolMemberClientId")},
+                                  NetworkingTestUserPoolMemberClientId: Fn.importValue("NetworkingTestUserPoolMemberClientId"),
+                                  NetworkingTestMembershipEventBusFakeArn: Fn.importValue("NetworkingTestMembershipEventBusFakeArn")},
       reporting: {fromDirectory: "reports/component-tests", withFiles: ["test-results.xml", "tests.log"], exportingTo: ExportType.S3},
       withPermissionToAccess: [
         {resource: testConfig.memberProjectionTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.userPoolArn, withAllowableOperations: ["cognito-idp:*"]},
         {resource: Fn.importValue("NetworkingTestEventListenerQueueArn"), withAllowableOperations: ["sqs:*"]},
-        {resource: Fn.importValue("NetworkingTestEmailListenerQueueArn"), withAllowableOperations: ["sqs:*"]}
+        {resource: Fn.importValue("NetworkingTestEmailListenerQueueArn"), withAllowableOperations: ["sqs:*"]},
+        {resource: "*", withAllowableOperations: ["ssm:GetParameter"]}
       ],
       withCustomDefinitions: {userPoolArn: testConfig.userPoolArn, 
                               eventListenerQueueArn: Fn.importValue("NetworkingTestEventListenerQueueArn"),
