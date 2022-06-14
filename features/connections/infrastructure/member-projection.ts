@@ -21,7 +21,7 @@ export class MemberProjection extends EnvvarsStack {
 
     this.addEnvvar("Name", this.memberProjection.tableName)
 
-    this.addEnvvar("Arn", this.memberProjection.tableName)
+    this.addEnvvar("Arn", this.memberProjection.tableArn)
   }
 
   get name(): string {
