@@ -72,6 +72,7 @@ async function main(): Promise<void>
         {resource: testConfig.connectionRequestTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.conversationsTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.userPoolArn, withAllowableOperations: ["cognito-idp:*"]},
+        {resource: Fn.importValue("NetworkingTestMembershipEventBusFakeArn"), withAllowableOperations: ["events:*"]},
         {resource: Fn.importValue("NetworkingTestEventListenerQueueArn"), withAllowableOperations: ["sqs:*"]},
         {resource: Fn.importValue("NetworkingTestEmailListenerQueueArn"), withAllowableOperations: ["sqs:*"]},
         {resource: "*", withAllowableOperations: ["ssm:GetParameter"]}

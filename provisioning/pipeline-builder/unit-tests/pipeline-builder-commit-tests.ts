@@ -85,15 +85,26 @@ test("Pipeline with commands to build", () => {
   expectCommandsToContain(stack, ["npm ci"])
 })
 
-test.skip("Pipeline with environment variables", () => {
+test("Pipeline with environment variables", () => {
   pipelineBuilder.withName("MembershipPipeline")
   pipelineBuilder.withCommitStage({extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection"}],
                                    executingCommands: ["npm ci"],
                                   withEnvironmentVariables: {envvar1: "test1", envvar2: "test2"}})
 
-  const stack = pipelineBuilder.build()
+  const template = Template.fromStack(pipelineBuilder.build())
 
-  expectCommandsToContain(stack, ["export envvar1=test1", "export envvar2=test2"])
+  template.hasResourceProperties("AWS::CodeBuild::Project", {
+    Environment: Match.objectLike({
+       EnvironmentVariables: Match.arrayWith([
+        Match.objectLike({
+          Name: "envvar1",
+          Type: "PLAINTEXT",
+          Value: "test1"
+        })
+      ])
+    })
+  })
+
 })
 
 test("Pipeline with unit test reports", () => {

@@ -193,38 +193,29 @@ test("Pipeline with report creation permissions", () => {
   })
 })
 
-// test("Pipeline with endpoints as environment variables", () => {
-//   pipelineBuilder.withName("MembershipPipeline")
-//   pipelineBuilder.withAcceptanceStage(
-//     {
-//       extractingSourceFrom: [{ provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection" }],
-//       executingCommands: ["npm run test:component"],
-//     })
+test("Pipeline with endpoints as environment variables", () => {
+  pipelineBuilder.withName("Networking")
+  pipelineBuilder.withAcceptanceStage(
+    {
+      extractingSourceFrom: [{ provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection" }],
+      executingCommands: ["npm run test:component"],
+    })
 
-//   const stack = pipelineBuilder.build()
-//   const template = Template.fromStack(stack)
+  const stack = pipelineBuilder.build()
+  const template = Template.fromStack(stack)
 
-//   template.hasResourceProperties("AWS::CodePipeline::Pipeline", {
-//     Stages: Match.arrayWith([
-//       Match.objectLike({
-//         "Name": "AcceptanceTest", 
-//         "Actions": Match.arrayWith([
-//           Match.objectLike({
-//             Configuration: Match.objectLike({
-//               EnvironmentVariables: Match.serializedJson(Match.arrayWith([
-//                 Match.objectLike({
-//                   name: "testFunction"
-//                 })
-//               ]))
-//             })
-//           })
-//         ])
-//       })
-//     ])
-//   })
-  
-//   expectCommandsToContain(stack, ["export testFunction=$testFunction"])
-// })
+  template.hasResourceProperties("AWS::CodeBuild::Project", {
+    Environment: Match.objectLike({
+       EnvironmentVariables: Match.arrayWith([
+        Match.objectLike({
+          Name: "bucketname",
+          Type: "PLAINTEXT",
+          Value: {"Fn::ImportValue": "bucketname"}
+        })
+      ])
+    })
+  })
+})
 
 test("Pipeline with access to test resources", () => {
 
@@ -267,14 +258,24 @@ test("Pipeline with custom definition", () => {
   })
 })
 
-test.skip("Pipeline with environment variables", () => {
+test("Pipeline with environment variables", () => {
   pipelineBuilder.withAcceptanceStage({extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection"}],
                                    executingCommands: ["npm ci"],
                                   withEnvironmentVariables: {envvar1: "test1", envvar2: "test2"}})
 
-  const stack = pipelineBuilder.build()
+  const template = Template.fromStack(pipelineBuilder.build())
 
-  expectCommandsToContain(stack, ["export envvar1=test1", "export envvar2=test2"])
+  template.hasResourceProperties("AWS::CodeBuild::Project", {
+    Environment: Match.objectLike({
+       EnvironmentVariables: Match.arrayWith([
+        Match.objectLike({
+          Name: "envvar1",
+          Type: "PLAINTEXT",
+          Value: "test1"
+        })
+      ])
+    })
+  })
 })
 
 
