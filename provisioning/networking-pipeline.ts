@@ -136,7 +136,7 @@ function provisionTestResources(app: App) {
 
 async function getTestConfig() : Promise<StageConfiguration>
 {
-  return {networkerProjectionTableArn: Fn.importValue("NetworkingTestNetworkerProjectionArn"),
+  return {networkerProjectionTableArn: Fn.importValue("NetworkingTestConnectionNetworkerProjectionArn"),
           connectionRequestTableArn: Fn.importValue("NetworkingTestConnectionRequestTableArn"),
           connectionsTableArn: Fn.importValue("NetworkingTestConnectionConnectionsTableArn"),
           userPoolArn: Fn.importValue("NetworkingTestUserPoolArn"),
@@ -145,7 +145,7 @@ async function getTestConfig() : Promise<StageConfiguration>
 
 async function getProdConfig(): Promise<StageConfiguration>
 {
-  return {networkerProjectionTableArn: Fn.importValue("NetworkingProdNetworkerProjectionArnprod"),
+  return {networkerProjectionTableArn: Fn.importValue("NetworkingProdConnectionNetworkerProjectionArnprod"),
     connectionRequestTableArn: Fn.importValue("NetworkingProdConnectionRequestTableArnprod"),
     connectionsTableArn: Fn.importValue("NetworkingProdConnectionConnectionsTableArnprod"),
     userPoolArn: await new StageParameters(process.env.AWS_REGION!).retrieveFromStage("userPoolArn", "prod"),
