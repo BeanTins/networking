@@ -1,22 +1,22 @@
 export class ConnectionRequested {
     invitationId: string
-    initiatingMemberId: string
-    invitedMemberId: string
+    initiatingNetworkerId: string
+    invitedNetworkerId: string
   
-    constructor(initiatingMemberId: string, invitedMemberId: string, invitationId: string){
-      this.initiatingMemberId = initiatingMemberId
-      this.invitedMemberId = invitedMemberId
+    constructor(initiatingNetworkerId: string, invitedNetworkerId: string, invitationId: string){
+      this.initiatingNetworkerId = initiatingNetworkerId
+      this.invitedNetworkerId = invitedNetworkerId
       this.invitationId = invitationId
     }
   }
   
 export class ConnectionAdded {
-  memberId: string
-  connectionMemberId: string
+  networkerId: string
+  connectionNetworkerId: string
 
-  constructor(memberId: string, connectionMemberId: string){
-    this.memberId = memberId
-    this.connectionMemberId = connectionMemberId
+  constructor(networkerId: string, connectionNetworkerId: string){
+    this.networkerId = networkerId
+    this.connectionNetworkerId = connectionNetworkerId
   }
 }
     

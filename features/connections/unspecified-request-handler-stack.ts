@@ -8,7 +8,7 @@ import {EventBus, Rule} from "aws-cdk-lib/aws-events"
 import {LambdaFunction} from "aws-cdk-lib/aws-events-targets"
 
 interface EventPublisherStackProps extends StackProps {
-  memberProjectionName: string
+  networkerProjectionName: string
   connectionRequestTableName: string
   networkingEventBusArn: string
 }
@@ -21,7 +21,7 @@ export class UnspecifiedRequestHandler extends Stack {
     super(scope, id, props)
 
     this.lambda = new NodejsFunction(this, "UnspecifiedRequestHandlerFunction", {
-      environment: {MemberProjection: props.memberProjectionName, ConnectionRequestTable: props.connectionRequestTableName},
+      environment: {NetworkerProjection: props.networkerProjectionName, ConnectionRequestTable: props.connectionRequestTableName},
       memorySize: 1024,
       timeout: Duration.seconds(5),
       runtime: Runtime.NODEJS_16_X,

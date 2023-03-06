@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb"
 import { DynamoDBDocumentClient, ScanCommand, DeleteCommand, PutCommand } from "@aws-sdk/lib-dynamodb"
-import logger from "./component-test-logger"
+import logger from "./service-test-logger"
 
 interface ConnectionParameters{
   tableName: string
@@ -32,7 +32,7 @@ export class ConnectionsAccessor {
   
           var record = {
               TableName: tableName,
-              Key: {"memberId": item["memberId"]}
+              Key: {"networkerId": item["networkerId"]}
           };
   
           logger.verbose("Clearing connections - " + JSON.stringify(record))
@@ -49,11 +49,11 @@ export class ConnectionsAccessor {
     }
   } 
 
-  async add(memberId: string, connectedToMemberId: string)
+  async add(networkerId: string, connectedToNetworkerId: string)
   {
     const putTableCommand = {
         TableName: this.TableName,
-        Item: {"memberId": memberId, connectedToMemberId}
+        Item: {"networkerId": networkerId, connectedToNetworkerId: connectedToNetworkerId}
     }
     
     try

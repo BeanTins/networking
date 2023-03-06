@@ -85,13 +85,13 @@ test("Pipeline with commands", () => {
   pipelineBuilder.withAcceptanceStage(
     {
       extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection"}],
-      executingCommands: ["npm run test:component"],
+      executingCommands: ["npm run test:service"],
     }
   )
 
   const stack = pipelineBuilder.build()
 
-  expectCommandsToContain(stack, ["npm run test:component"])
+  expectCommandsToContain(stack, ["npm run test:service"])
 
 })
 
@@ -100,7 +100,7 @@ test("Pipeline with deployment", () => {
   pipelineBuilder.withAcceptanceStage(
     {
       extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection"}],
-      executingCommands: ["npm run test:component"],
+      executingCommands: ["npm run test:service"],
     }
   )
 
@@ -114,12 +114,12 @@ test("Pipeline with deployment", () => {
 
 })
 
-test("Pipeline with acceptance stage component test reporting", () => {
+test("Pipeline with acceptance stage service test reporting", () => {
   pipelineBuilder.withAcceptanceStage(
     {
       extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection"}],
-      executingCommands: ["npm run test:component"],
-      reporting: {fromDirectory: "reports/component-tests", withFiles: ["test-results.xml"]}
+      executingCommands: ["npm run test:service"],
+      reporting: {fromDirectory: "reports/service-tests", withFiles: ["test-results.xml"]}
     }
   )
 
@@ -136,16 +136,16 @@ test("Pipeline with acceptance stage component test reporting", () => {
 
   let buildSpecText = reportingString.asArray().toString()
   expect(buildSpecText).toEqual(expect.stringMatching(/files.+test-results.xml/sm))
-  expect(buildSpecText).toEqual(expect.stringMatching(/base-directory.+reports[/]component-tests/sm))
+  expect(buildSpecText).toEqual(expect.stringMatching(/base-directory.+reports[/]service-tests/sm))
 })
 
-test("Pipeline with acceptance stage component test exporting", () => {
+test("Pipeline with acceptance stage service test exporting", () => {
   pipelineBuilder.withAcceptanceStage(
     {
       extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection"}],
-      executingCommands: ["npm run test:component"],
+      executingCommands: ["npm run test:service"],
       reporting: 
-      {fromDirectory: "reports/component-tests", withFiles: ["test-results.xml"], exportingTo: ExportType.S3}
+      {fromDirectory: "reports/service-tests", withFiles: ["test-results.xml"], exportingTo: ExportType.S3}
     }
   )
 
@@ -198,7 +198,7 @@ test("Pipeline with endpoints as environment variables", () => {
   pipelineBuilder.withAcceptanceStage(
     {
       extractingSourceFrom: [{ provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection" }],
-      executingCommands: ["npm run test:component"],
+      executingCommands: ["npm run test:service"],
     })
 
   const stack = pipelineBuilder.build()
@@ -222,7 +222,7 @@ test("Pipeline with access to test resources", () => {
   pipelineBuilder.withAcceptanceStage(
     {
       extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection"}],
-      executingCommands: ["npm run test:component"],
+      executingCommands: ["npm run test:service"],
       withPermissionToAccess: [{resource: "TestResource", withAllowableOperations: ["dynamodb:*"]}]
     }
   )
@@ -244,7 +244,7 @@ test("Pipeline with custom definition", () => {
   pipelineBuilder.withAcceptanceStage(
     {
       extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection"}],
-      executingCommands: ["npm run test:component"],
+      executingCommands: ["npm run test:service"],
       withCustomDefinitions: {bucketName: "newbucket"}
     }
   )

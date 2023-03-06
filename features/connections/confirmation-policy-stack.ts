@@ -12,7 +12,7 @@ interface ConfirmationPolicyStackProps extends StackProps {
   connectionRequestTableName: string
   connectionsTable: Table;
   eventBusName: string
-  memberProjectionName: string
+  networkerProjectionName: string
   emailConfigurationSet?: string 
   notificationEmailAddress: string
 }
@@ -26,7 +26,7 @@ export class ConfirmationPolicy extends Stack {
 
     let environment: any = {
       EventBusName: props.eventBusName, 
-      MemberProjection: props.memberProjectionName, 
+      NetworkerProjection: props.networkerProjectionName, 
       ConnectionRequestTable: props.connectionRequestTableName,
       NotificationEmailAddress: props.notificationEmailAddress
     }

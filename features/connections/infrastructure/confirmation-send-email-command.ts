@@ -1,15 +1,15 @@
-import { Member } from "./member-dao";
+import { Networker } from "./networker-dao";
 import { SendEmailCommand } from "@aws-sdk/client-ses"
 import logger from "../../../infrastructure/lambda-logger"
 
 export class ConfirmationSendEmailCommand {
 
-  static build(initiatingMember: Member, invitedMember: Member, senderEmail: string) {
+  static build(initiatingNetworker: Networker, invitedNetworker: Networker, senderEmail: string) {
     
     let command: any
 
     try{
-      command = ConfirmationSendEmailCommand.buildCommand(initiatingMember, invitedMember, senderEmail)
+      command = ConfirmationSendEmailCommand.buildCommand(initiatingNetworker, invitedNetworker, senderEmail)
     }
     catch(error)
     {
@@ -20,20 +20,20 @@ export class ConfirmationSendEmailCommand {
     return command
   }
 
-  static buildCommand(initiatingMember: Member, invitedMember: Member, senderEmail: string) {
+  static buildCommand(initiatingNetworker: Networker, invitedNetworker: Networker, senderEmail: string) {
     let params: any = {
       Destination: {
-        ToAddresses: [initiatingMember.email],
+        ToAddresses: [initiatingNetworker.email],
       },
       Message: {
         Body: {
           Html: {
             Charset: 'UTF-8',
-            Data: ConfirmationSendEmailCommand.getHtmlContent(initiatingMember.name, invitedMember.name),
+            Data: ConfirmationSendEmailCommand.getHtmlContent(initiatingNetworker.name, invitedNetworker.name),
           },
           Text: {
             Charset: 'UTF-8',
-            Data: ConfirmationSendEmailCommand.getTextContent(initiatingMember.name, invitedMember.name),
+            Data: ConfirmationSendEmailCommand.getTextContent(initiatingNetworker.name, invitedNetworker.name),
           },
         },
         Subject: {
@@ -51,21 +51,21 @@ export class ConfirmationSendEmailCommand {
     return new SendEmailCommand(params)
   }
 
-  static getHtmlContent(initiatingMemberName: string, invitedMemberName: string) {
+  static getHtmlContent(initiatingNetworkerName: string, invitedNetworkerName: string) {
 
     return `
         <html>
           <body>
-            <h1>Congratulations ${initiatingMemberName}, you are now connected to ${invitedMemberName}. </h1>
+            <h1>Congratulations ${initiatingNetworkerName}, you are now connected to ${invitedNetworkerName}. </h1>
           </body>
         </html>
       `;
   }
 
-  static getTextContent(initiatingMemberName: string, invitedMemberName: string) {
+  static getTextContent(initiatingNetworkerName: string, invitedNetworkerName: string) {
 
     return `
-    Congratulations ${initiatingMemberName}, you are now connected to ${invitedMemberName}.
+    Congratulations ${initiatingNetworkerName}, you are now connected to ${invitedNetworkerName}.
     `;
   }
 }

@@ -11,7 +11,7 @@ import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam"
 interface InvitationPolicyStackProps extends StackProps {
   connectionRequestTable: Table
   eventBusName: string
-  memberProjectionName: string
+  networkerProjectionName: string
   emailConfigurationSet?: string 
   notificationEmailAddress: string
 }
@@ -25,7 +25,7 @@ export class InvitationPolicyStack extends Stack {
 
     let environment: any = {
       EventBusName: props.eventBusName, 
-      MemberProjection: props.memberProjectionName,
+      NetworkerProjection: props.networkerProjectionName,
       NotificationEmailAddress: props.notificationEmailAddress
     }
 

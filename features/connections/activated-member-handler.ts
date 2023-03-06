@@ -1,13 +1,13 @@
 import { Context, EventBridgeEvent } from "aws-lambda"
-import {MemberDAO, Member} from "./infrastructure/member-dao"
+import {NetworkerDAO} from "./infrastructure/networker-dao"
 import logger from "../../infrastructure/lambda-logger"
 
 export const lambdaHandler = async (event: EventBridgeEvent<any, any>, context: Context): Promise<any> => {
   
   try{
-    const handler = new NotificationHandler()
+    const handler = new ActivatedMemberHandler()
 
-    await handler.handle(new MemberActivatedEvent(event.detail.email, event.detail.id, event.detail.name))
+    await handler.handle(event.detail)
   }
   catch(error)
   {
@@ -16,19 +16,18 @@ export const lambdaHandler = async (event: EventBridgeEvent<any, any>, context: 
   }
 }
 
-class NotificationHandler
+export class ActivatedMemberHandler
 {
-  private memberDAO: MemberDAO
+  private networkerDAO: NetworkerDAO
   constructor()
   {
-    this.memberDAO = new MemberDAO()
+    this.networkerDAO = new NetworkerDAO(process.env.AWS_REGION!)
   }
 
-  async handle(event: MemberActivatedEvent)
+  async handle(rawActivatedMemberEvent: any)
   {
-    let member = Member.create(event.name, event.email, event.id)
-
-    await this.memberDAO.save(member)
+    const activatedMember = new MemberActivatedEvent(rawActivatedMemberEvent.email, rawActivatedMemberEvent.id, rawActivatedMemberEvent.name)
+    await this.networkerDAO.save({name: activatedMember.name, email: activatedMember.email, id: activatedMember.id})
   }
 }
 

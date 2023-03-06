@@ -2,8 +2,8 @@ import { Context, DynamoDBStreamEvent } from "aws-lambda"
 import { unmarshall } from "@aws-sdk/util-dynamodb"
 import { AttributeValue} from "@aws-sdk/client-dynamodb"
 import { ConnectionAdded } from "./domain/events"
-import { ConnectionRequestDAO } from "./infrastructure/connection-request-dao"
-import { MemberDAO } from "./infrastructure/member-dao"
+import { RequestDAO } from "./infrastructure/request-dao"
+import { NetworkerDAO } from "./infrastructure/networker-dao"
 import logger from "../../infrastructure/lambda-logger"
 import { SESClient} from "@aws-sdk/client-ses"
 import { ConfirmationSendEmailCommand } from "./infrastructure/confirmation-send-email-command"
@@ -34,7 +34,7 @@ class ConfirmationPolicy {
 
       if (event != undefined)
       {
-        const command = new SendConfirmationEmailCommand(event.memberId, event.connectionMemberId)
+        const command = new SendConfirmationEmailCommand(event.networkerId, event.connectionNetworkerId)
 
         await this.commandHandler.handle(command)
 
@@ -65,7 +65,7 @@ class ConfirmationPolicy {
         }
       )
     
-      event = new ConnectionAdded(connection.memberId, connection.connectionMemberId)
+      event = new ConnectionAdded(connection.networkerId, connection.connectionNetworkerId)
     }
 
     return event
@@ -74,26 +74,26 @@ class ConfirmationPolicy {
 
 class SendConfirmationEmailCommandHandler {
 
-  private memberDAO: MemberDAO
+  private networkerDAO: NetworkerDAO
   private emailClient: SESClient
-  private connectionRequest: ConnectionRequestDAO
+  private connectionRequest: RequestDAO
 
   public constructor() {
-    this.memberDAO = new MemberDAO()
+    this.networkerDAO = new NetworkerDAO(process.env.AWS_REGION!)
     this.emailClient = new SESClient({ region: process.env.AWS_REGION })
-    this.connectionRequest = new ConnectionRequestDAO()
+    this.connectionRequest = new RequestDAO(process.env.AWS_REGION!)
   }
 
   async handle(command: SendConfirmationEmailCommand) {
 
-    const invitationId = await this.connectionRequest.getInvitationId(command.memberId, command.connectionMemberId)
+    const invitationId = await this.connectionRequest.getInvitationId(command.networkerId, command.connectionNetworkerId)
 
     if (invitationId != undefined)
     {
-      const member = await this.memberDAO.load(command.memberId)
-      const connectionMember = await this.memberDAO.load(command.connectionMemberId)
+      const networker = await this.networkerDAO.load(command.networkerId)
+      const connectionNetworker = await this.networkerDAO.load(command.connectionNetworkerId)
 
-      await this.emailClient.send(ConfirmationSendEmailCommand.build(member!, connectionMember!, process.env.NotificationEmailAddress!))
+      await this.emailClient.send(ConfirmationSendEmailCommand.build(networker!, connectionNetworker!, process.env.NotificationEmailAddress!))
       await this.connectionRequest.remove(invitationId)
     }
   }
@@ -101,13 +101,13 @@ class SendConfirmationEmailCommandHandler {
 
 class SendConfirmationEmailCommand {
 
-  constructor(memberId: string, connectionMemberId: string){
-    this.memberId = memberId
-    this.connectionMemberId = connectionMemberId
+  constructor(networkerId: string, connectionNetworkerId: string){
+    this.networkerId = networkerId
+    this.connectionNetworkerId = connectionNetworkerId
   }
 
-  memberId: string
-  connectionMemberId: string
+  networkerId: string
+  connectionNetworkerId: string
 }
 
 

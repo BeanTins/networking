@@ -1,6 +1,6 @@
 import { MemberCredentialsAccessor} from "./member-credentials-accessor"
 import  { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge"
-import logger from "./component-test-logger"
+import logger from "./service-test-logger"
 import { v4 as uuidv4 } from "uuid"
 
 type EmailRole = "sender" | "receiver"

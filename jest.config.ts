@@ -5,7 +5,7 @@ import type {Config} from "@jest/types";
 const config: Config.InitialOptions = {
     projects: [
 "jest.unit.config.ts",
-                "jest.component.config.ts"  
+                "jest.service.config.ts"  
 ]
 };
 export default config;

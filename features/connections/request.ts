@@ -1,8 +1,8 @@
 
 import { APIGatewayEvent, Context, APIGatewayProxyResult } from "aws-lambda"
 import { OpenAPISpecBuilder, HttpMethod} from "../../infrastructure/open-api-spec"
-import { MemberDAO } from "./infrastructure/member-dao"
-import { ConnectionRequestDAO, ConnectionRequest } from "./infrastructure/connection-request-dao"
+import { NetworkerDAO } from "./infrastructure/networker-dao"
+import { RequestDAO, ConnectionRequest } from "./infrastructure/request-dao"
 import { HttpResponse } from "../../infrastructure/http-response"
 import logger  from "../../infrastructure/lambda-logger"
 import { EventDispatcher } from "../../infrastructure/event-dispatcher"
@@ -14,11 +14,11 @@ export class SpecBuilderFactory
   {
     const specBuilder = new OpenAPISpecBuilder("3.0.0")
 
-    specBuilder.describedAs("connection request", "member request to connect with another member on the BeanTins service", "1.9.0")
+    specBuilder.describedAs("connection request", "request to connect with another netwoker on the BeanTins service", "1.9.0")
   
     const endpoint = specBuilder.withEndpoint("/connection/request", HttpMethod.Post)
-    endpoint.withRequestBodyStringProperty({name: "initiatingMemberId", required: true})
-    endpoint.withRequestBodyStringProperty({name: "invitedMemberId", required: true})
+    endpoint.withRequestBodyStringProperty({name: "initiatingNetworkerId", required: true})
+    endpoint.withRequestBodyStringProperty({name: "invitedNetworkerId", required: true})
     endpoint.withResponse("201", "connection requested")
     endpoint.withResponse("400", "connection request failed")
   
@@ -64,25 +64,24 @@ async request(requestDTO: any) {
 
 export class RequestCommandHandler {
 
-  private memberDAO: MemberDAO
-  private connectionRequestDAO: ConnectionRequestDAO
+  private networkerDAO: NetworkerDAO
+  private connectionRequestDAO: RequestDAO
   private dispatcher: EventDispatcher
 
   public constructor() {
-    this.memberDAO = new MemberDAO()
-    this.connectionRequestDAO = new ConnectionRequestDAO()
+    this.networkerDAO = new NetworkerDAO(process.env.AWS_REGION!)
+    this.connectionRequestDAO = new RequestDAO(process.env.AWS_REGION!)
     this.dispatcher = new EventDispatcher(process.env.AWS_REGION!)
   }
 
   async handle(command: RequestCommand) {
-    if(await this.memberDAO.exists(command.initiatingMemberId))
+    if(await this.networkerDAO.exists(command.initiatingNetworkerId))
     {
-      const connectionRequest = ConnectionRequest.create(command.initiatingMemberId, command.invitedMemberId)
-      await this.connectionRequestDAO.add(connectionRequest) 
+      await this.connectionRequestDAO.add(command.initiatingNetworkerId, command.invitedNetworkerId)
     }
     else
     {
-      const event = new UnspecifiedConnectionRequest(command.initiatingMemberId, command.invitedMemberId)
+      const event = new UnspecifiedConnectionRequest(command.initiatingNetworkerId, command.invitedNetworkerId)
 
       await this.dispatcher.dispatch(event)     
     }
@@ -90,8 +89,8 @@ export class RequestCommandHandler {
 }
 
 export class RequestCommand {
-  initiatingMemberId: string
-  invitedMemberId: string
+  initiatingNetworkerId: string
+  invitedNetworkerId: string
 }
 
   

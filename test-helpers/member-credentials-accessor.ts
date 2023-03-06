@@ -7,7 +7,7 @@ import {
   InitiateAuthCommand,
   SignUpCommand
 } from "@aws-sdk/client-cognito-identity-provider"
-import logger from "./component-test-logger"
+import logger from "./service-test-logger"
 
 interface CredentialParameters
 {

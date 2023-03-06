@@ -9,13 +9,13 @@ import { LambdaEndpoint } from "../../provisioning/lambda-endpoint"
 
 interface RequestStackProps extends StackProps {
   stageName: string
-  memberProjectionName: string
+  networkerProjectionName: string
   connectionRequestTableName: string
   userPoolArn: string
   eventBusName: string
 }
 
-export class ConnectionRequestCommand extends LambdaEndpoint {
+export class RequestCommand extends LambdaEndpoint {
   
   constructor(scope: Construct, id: string, props: RequestStackProps) {
 
@@ -28,7 +28,7 @@ export class ConnectionRequestCommand extends LambdaEndpoint {
  
     super(scope, id, 
       {name: "ConnectionRequest",
-       environment: {MemberProjection: props.memberProjectionName, ConnectionRequestTable: props.connectionRequestTableName, EventBusName: props.eventBusName},
+       environment: {NetworkerProjection: props.networkerProjectionName, ConnectionRequestTable: props.connectionRequestTableName, EventBusName: props.eventBusName},
        stageName: props.stageName,
        entry: path.join(__dirname, "./request.ts"),
        openAPISpec: specBuilder,

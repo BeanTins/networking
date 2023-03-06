@@ -9,7 +9,7 @@ export class ConnectionsTable extends EnvvarsStack {
   constructor(scope: Construct, id: string, props: StackProps) {
     super(scope, id, props)
     this.connections = new Table(this, "Table", {
-      partitionKey: { name: "memberId", type: AttributeType.STRING },
+      partitionKey: { name: "networkerId", type: AttributeType.STRING },
       readCapacity: 1,
       writeCapacity: 2,
       removalPolicy: RemovalPolicy.DESTROY,

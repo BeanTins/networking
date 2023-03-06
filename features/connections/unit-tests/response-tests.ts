@@ -1,12 +1,10 @@
 import { lambdaHandler } from "../response"
 import { APIGatewayEvent, Context,APIGatewayProxyResult  } from "aws-lambda"
-import { DataMapperFactoryMock, DataMapperMock} from "../../../test-helpers/data-mapper-factory-mock"
-import { DataMapperFactory } from "../../../infrastructure/data-mapper-factory"
-import { Member } from "../infrastructure/member-dao"
-import { ConnectionRequest} from "../infrastructure/connection-request-dao"
+import { ConnectionRequest} from "../infrastructure/request-dao"
 import { LambdaEventBuilder } from "./helpers/lambda-event-builder"
 import {mockClient} from "aws-sdk-client-mock"
-import {DynamoDBDocumentClient, TransactWriteCommand} from "@aws-sdk/lib-dynamodb"
+import {DynamoDBDocumentClient, GetCommand, DeleteCommand, TransactWriteCommand} from "@aws-sdk/lib-dynamodb"
+import {Networker} from "../infrastructure/networker-dao"
 
 const loggerVerboseMock = jest.fn()
 const loggerErrorMock = jest.fn()
@@ -15,43 +13,33 @@ jest.mock("../../../infrastructure/lambda-logger", () => ({ verbose: (message: s
 
 const dynamoMock = mockClient(DynamoDBDocumentClient)
 let event: APIGatewayEvent, context: Context
-let members: DataMapperMock
-let connectionRequests: DataMapperMock
 
 beforeEach(() => {
     jest.clearAllMocks()
 
-    let dataMapperFactory = new DataMapperFactoryMock()
-
-    members = dataMapperFactory.create(Member.name)
-    connectionRequests = dataMapperFactory.create(ConnectionRequest.name)
-    
-    DataMapperFactory.create = dataMapperFactory.map()
-
+    dynamoMock.reset()
     process.env.ConnectionsTable = "ConnectionsTable"
+    process.env.NetworkerProjection = "Networker"
+    process.env.ConnectionRequestTable = "ConnectionRequest"
 })
-
-"response for invitation dc4bff61-cc5f-44c6-8e11-b36e099f3785 failed due to unknown decision: unknown"
 
 test("approved connection response", async () => {
 
-    members.querySequenceResponses([[Member.create("Barney Rubble", "brubble@hotmail.com", "5678")],
-                                    [Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")]])
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
+  givenConnectionRequest({invitationId: "1234", initiatingNetworkerId: "5678", invitedNetworkerId: "9012"})
+  
+  const result:APIGatewayProxyResult = await whenConnectionResponse("1234", "approve")
 
-    connectionRequests.get.mockReturnValue({invitationId: "1234", initiatingMemberId: "5678", invitedMemberId: "9012"})
-    
-    const result:APIGatewayProxyResult = await whenConnectionResponse("1234", "approve")
-
-    expect(result.statusCode).toBe(201)
+  expect(result.statusCode).toBe(201)
 })
 
 test("rejected connection response", async () => {
 
-  members.queryUsingSet([Member.create("Barney Rubble", "brubble@hotmail.com", "5678"),
-                         Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")], "id")
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
+  givenConnectionRequest({invitationId: "1234", initiatingNetworkerId: "5678", invitedNetworkerId: "9012"})
 
-  connectionRequests.get.mockReturnValue({invitationId: "1234", initiatingMemberId: "5678", invitedMemberId: "9012"})
-  
   const result:APIGatewayProxyResult = await whenConnectionResponse("1234", "reject")
 
   expect(result.statusCode).toBe(200)
@@ -59,10 +47,9 @@ test("rejected connection response", async () => {
 
 test("connection response fails if decision type is unknown", async () => {
 
-  members.querySequenceResponses([[Member.create("Barney Rubble", "brubble@hotmail.com", "5678")],
-                                  [Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")]])
-
-  connectionRequests.get.mockReturnValue({invitationId: "1234", initiatingMemberId: "5678", invitedMemberId: "9012"})
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
+  givenConnectionRequest({invitationId: "1234", initiatingNetworkerId: "5678", invitedNetworkerId: "9012"})
   
   const result:APIGatewayProxyResult = await whenConnectionResponse("1234", "maybe")
 
@@ -73,41 +60,24 @@ test("connection response fails if decision type is unknown", async () => {
 
 test("rejected connection removes request", async () => {
 
-  members.queryUsingSet([Member.create("Barney Rubble", "brubble@hotmail.com", "5678"),
-                         Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")], "id")
-
-  connectionRequests.get.mockReturnValue({invitationId: "1234", initiatingMemberId: "5678", invitedMemberId: "9012"})
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
+  givenConnectionRequest({invitationId: "1234", initiatingNetworkerId: "5678", invitedNetworkerId: "9012"})
   
   const result:APIGatewayProxyResult = await whenConnectionResponse("1234", "reject")
 
-  expect(connectionRequests.delete).toBeCalledWith({invitationId: "1234"})
+  thenConnectionRequestDeleted("1234")
 })
 
 test("after approved connection both members have each other as connection", async () => {
 
-  members.querySequenceResponses([[Member.create("Barney Rubble", "brubble@hotmail.com", "5678")],
-                                  [Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")]])
-
-  connectionRequests.get.mockReturnValue({invitationId: "1234", initiatingMemberId: "5678", invitedMemberId: "9012"})
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
+  givenConnectionRequest({invitationId: "1234", initiatingNetworkerId: "5678", invitedNetworkerId: "9012"})
   
   await whenConnectionResponse("1234", "approve")
 
-  expect(dynamoMock.commandCalls(TransactWriteCommand)[0].args[0].input).toEqual(
-    expect.objectContaining({
-      TransactItems:expect.arrayContaining([
-        expect.objectContaining({
-          Put: expect.objectContaining({
-            Item: expect.objectContaining({memberId: "5678", connectionMemberId: "9012"})
-          })
-        }),
-        expect.objectContaining({
-          Put: expect.objectContaining({
-            Item: expect.objectContaining({memberId: "9012", connectionMemberId: "5678"})
-          })
-        })        
-      ])
-    })
-  )
+  thenConnectionsInterconnected("5678", "9012")
 })
 
 async function whenConnectionResponse(invitationId: string|null, decision: string){
@@ -116,4 +86,67 @@ async function whenConnectionResponse(invitationId: string|null, decision: strin
 
   return await lambdaHandler(event, context)
 }
+
+function givenNetworker(networker: Networker)
+{
+  dynamoMock
+    .on(GetCommand, {
+      TableName: "Networker",
+      Key: {
+        id : networker.id,
+      }
+    }
+    ).resolves({Item: networker})
+}
+
+function givenConnectionRequest(request: ConnectionRequest)
+{
+  dynamoMock
+    .on(GetCommand, {
+      TableName: "ConnectionRequest",
+      Key: {
+        invitationId : request.invitationId,
+      }
+    }
+    ).resolves({Item: request})
+}
+
+function thenConnectionRequestDeleted(invitationId: string)
+{
+  expect(dynamoMock.commandCalls(DeleteCommand).length).toBe(1)
+  expect(dynamoMock.commandCalls(DeleteCommand)[0].args[0].input).toEqual(
+    expect.objectContaining({
+      Key: {invitationId: invitationId},
+      TableName: "ConnectionRequest"
+    })
+  )
+
+}
+
+function thenConnectionsInterconnected(firstNetworkerId: string, secondNetworkerId: string)
+{
+  expect(dynamoMock.commandCalls(TransactWriteCommand).length).toBe(1)
+  expect(dynamoMock.commandCalls(TransactWriteCommand)[0].args[0].input).toEqual(
+    expect.objectContaining({
+      TransactItems:expect.arrayContaining([
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            TableName: "ConnectionsTable",
+            Item: expect.objectContaining({networkerId: firstNetworkerId, connectionNetworkerId: secondNetworkerId})
+          })
+        }),
+        expect.objectContaining({
+          Put: expect.objectContaining({
+            TableName: "ConnectionsTable",
+            Item: expect.objectContaining({networkerId: secondNetworkerId, connectionNetworkerId: firstNetworkerId})
+          })
+        })        
+      ])
+    })
+  )
+
+}
+
+
+
   

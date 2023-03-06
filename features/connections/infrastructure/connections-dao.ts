@@ -3,14 +3,14 @@ import { DynamoDBDocumentClient, TransactWriteCommand, QueryCommand } from "@aws
 import logger from "../../../infrastructure/lambda-logger"
 
 export class Connection {
-  public memberId: string
-  public connectedToMemberId: string
+  public networkerId: string
+  public connectedToNetworkerId: string
 
-  static create(memberId: string, connectedToMemberId: string){
+  static create(networkerId: string, connectedToNetworkerId: string){
     let connection = new Connection()
 
-    connection.memberId = memberId
-    connection.connectedToMemberId = connectedToMemberId
+    connection.networkerId = networkerId
+    connection.connectedToNetworkerId = connectedToNetworkerId
 
     return connection
   }
@@ -29,7 +29,7 @@ export class ConnectionsDAO
       this.tableName = process.env.ConnectionsTable!
     }
 
-    async add(firstMemberId: string, secondMemberId: string)
+    async add(firstNetworkerId: string, secondNetworkerId: string)
     {
       try
       {
@@ -40,8 +40,8 @@ export class ConnectionsDAO
                 Put: {
                   TableName: this.tableName,
                   Item: {
-                    memberId: firstMemberId, 
-                    connectionMemberId: secondMemberId,
+                    networkerId: firstNetworkerId, 
+                    connectionNetworkerId: secondNetworkerId,
                   }
                 }
               },
@@ -49,8 +49,8 @@ export class ConnectionsDAO
                 Put: {
                   TableName: this.tableName,
                   Item: {
-                    memberId: secondMemberId, 
-                    connectionMemberId: firstMemberId,
+                    networkerId: secondNetworkerId, 
+                    connectionNetworkerId: firstNetworkerId,
                   }
                 }
               }
@@ -63,14 +63,50 @@ export class ConnectionsDAO
       }
     }
 
-    async exists(firstMemberId: string, secondMemberId: string): Promise<boolean>
+    async isInstigatorConnectedWithEveryone(instigatorNetworkerId: string, otherPartipantIds: Set<string>): Promise<boolean>
+    {
+      let connectedToAll: boolean = false
+
+      var connectedToNetworkersObject: any = {}
+      var index = 0;
+      otherPartipantIds.forEach(function(value) {
+          index++;
+          var titleKey = ":connectedToNetworkerId"+index
+          connectedToNetworkersObject[titleKey.toString()] = value
+      })
+
+      var params = {
+        KeyConditionExpression: "#networkerId = :networkerId",
+        FilterExpression: "#connectedToNetworkerId IN ("+Object.keys(connectedToNetworkersObject).toString()+ ")",
+        ExpressionAttributeValues: {...connectedToNetworkersObject,":networkerId": instigatorNetworkerId},
+        ExpressionAttributeNames: { "#connectedToNetworkerId": "connectedToNetworkerId" , "#networkerId": "networkerId"},
+        TableName: this.tableName 
+      }
+      logger.verbose(JSON.stringify(params))
+      try{
+          let result = await this.dynamoDB.send(new QueryCommand(params))
+          logger.verbose("wait for connections query result - " + JSON.stringify(result))
+          if((result.Count != null) && result.Count == otherPartipantIds.size)
+          {
+            connectedToAll = true
+          }
+        }
+      catch(err){
+        logger.error("connection table query failed with " + JSON.stringify(err))
+      }
+    
+      return connectedToAll
+    }
+    
+
+    async exists(firstNetworkerId: string, secondNetworkerId: string): Promise<boolean>
     {
       let connectionExists: boolean = false
 
       var params = {
-        KeyConditionExpression: "#memberId = :memberId and #connectedToMemberId = :connectedToMemberId",
-        ExpressionAttributeValues: { ":memberId": firstMemberId, ":connectedToMemberId": secondMemberId},
-        ExpressionAttributeNames: {"#memberId": "memberId", "#connectedToMemberId": "connectedToMemberId"},
+        KeyConditionExpression: "#networkerId = :networkerId and #connectedToNetworkerId = :connectedToNetworkerId",
+        ExpressionAttributeValues: { ":networkerId": firstNetworkerId, ":connectedToNetworkerId": secondNetworkerId},
+        ExpressionAttributeNames: {"#networkerId": "networkerId", "#connectedToNetworkerId": "connectedToNetworkerId"},
         TableName: this.tableName
       }
       try{

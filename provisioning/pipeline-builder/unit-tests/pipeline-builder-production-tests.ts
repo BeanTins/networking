@@ -23,7 +23,7 @@ beforeEach(() => {
   pipelineBuilder.withAcceptanceStage(
     {
       extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "membership", branch: "main", accessIdentifier: "arn:scmconnection"}],
-      executingCommands: ["npm run test:component"],
+      executingCommands: ["npm run test:service"],
     }
   )
 })

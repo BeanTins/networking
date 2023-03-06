@@ -1,26 +1,20 @@
 import { lambdaHandler } from "../activated-member-handler"
 import { EventBridgeEvent, Context,APIGatewayProxyResult  } from "aws-lambda"
-import { DataMapperFactoryMock, DataMapperMock} from "../../../test-helpers/data-mapper-factory-mock"
-import { DataMapperFactory } from "../../../infrastructure/data-mapper-factory"
-import { Member } from "../infrastructure/member-dao"
-import { ConnectionRequest} from "../infrastructure/connection-request-dao"
+import { Networker} from "../infrastructure/networker-dao"
+import {DynamoDBDocumentClient, PutCommand} from "@aws-sdk/lib-dynamodb"
+import {mockClient} from "aws-sdk-client-mock"
 
+
+const dynamoMock = mockClient(DynamoDBDocumentClient)
 let event: EventBridgeEvent<any, any>
 let context: Context
-let members: DataMapperMock
-let connections: DataMapperMock
 
 const mockUUid = jest.fn()
 jest.mock("uuid", () => ({ v4: () => mockUUid() }))
 
 beforeEach(() => {
     jest.clearAllMocks()
-
-    let dataMapperFactory = new DataMapperFactoryMock()
-
-    members = dataMapperFactory.create(Member.name)
-    
-    DataMapperFactory.create = dataMapperFactory.map()
+    process.env.NetworkerProjection = "Networkers"
 })
 
 test("event stored", async () => {
@@ -29,8 +23,7 @@ test("event stored", async () => {
   
   const result:APIGatewayProxyResult  = await lambdaHandler(event, context)
 
-  expect(members.put).toBeCalledWith({"id": "09040739-830c-49d3-b8a5-1e6c9270fdb2", "name": "bing jacob", "email": "bing.jacob@hotmail.com"}
-  )
+  thenNetworkerStored({id: "09040739-830c-49d3-b8a5-1e6c9270fdb2", name: "bing jacob", email: "bing.jacob@hotmail.com"})
 })
 
 function whenActivatedMember(id: string|null, name: string|null, email: string|null){
@@ -45,3 +38,15 @@ function whenActivatedMember(id: string|null, name: string|null, email: string|n
 
 }
   
+function thenNetworkerStored(networker: Networker)
+{
+  expect(dynamoMock.commandCalls(PutCommand).length).toBe(1)
+  expect(dynamoMock.commandCalls(PutCommand)[0].args[0].input).toEqual(
+    expect.objectContaining({
+      Item: networker,
+      TableName: "Networkers"
+    })
+  )
+
+}
+

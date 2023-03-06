@@ -9,6 +9,7 @@ export class NetworkingFactory implements StageFactory {
       {stageName: props.stageName, 
        stackNamePrepend: props.stackNamePrepend,
        userPoolArn: props.customDefinitions!["userPoolArn"],
+       userPoolId: props.customDefinitions!["userPoolId"],
        membershipEventBusArn: props.customDefinitions!["membershipEventBusArn"],
        emailConfigurationSet: props.customDefinitions!["emailConfigurationSet"],
        eventListenerQueueArn: props.customDefinitions!["eventListenerQueueArn"],

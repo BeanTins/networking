@@ -8,14 +8,14 @@ import { LambdaEndpoint } from "../../provisioning/lambda-endpoint"
 
 interface ResponseStackProps extends StackProps {
   stageName: string
-  memberProjectionName: string
+  networkerProjectionName: string
   connectionRequestTableName: string
   connectionsTableName: string
   userPoolArn: string
   eventBusName: string
 }
 
-export class ConnectionResponseCommand extends LambdaEndpoint {
+export class ResponseCommand extends LambdaEndpoint {
   
   constructor(scope: Construct, id: string, props: ResponseStackProps) {
 
@@ -30,7 +30,7 @@ export class ConnectionResponseCommand extends LambdaEndpoint {
     super(scope, id, 
       {name: "ConnectionResponse",
        environment: 
-       {MemberProjection: props.memberProjectionName, 
+       {NetworkerProjection: props.networkerProjectionName, 
         ConnectionRequestTable: props.connectionRequestTableName,
         ConnectionsTable: props.connectionsTableName},
        stageName: props.stageName,

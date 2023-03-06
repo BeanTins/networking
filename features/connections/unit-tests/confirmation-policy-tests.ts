@@ -1,45 +1,41 @@
 import { lambdaHandler } from "../confirmation-policy"
 import { Context, DynamoDBStreamEvent } from "aws-lambda"
-import { DataMapperFactoryMock, DataMapperMock} from "../../../test-helpers/data-mapper-factory-mock"
-import { DataMapperFactory } from "../../../infrastructure/data-mapper-factory"
-import { Member } from "../infrastructure/member-dao"
+import { Networker } from "../infrastructure/networker-dao"
+import {ConnectionRequest} from "../infrastructure/request-dao"
 import {mockClient} from "aws-sdk-client-mock"
 import {SESClient, SendEmailCommand} from "@aws-sdk/client-ses"
 import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge"
+import {DynamoDBDocumentClient, GetCommand, QueryCommand, DeleteCommand} from "@aws-sdk/lib-dynamodb"
 
+const dynamoMock = mockClient(DynamoDBDocumentClient)
 const sesMock = mockClient(SESClient)
 const eventbridgeMock = mockClient(EventBridgeClient)
 
 let event: DynamoDBStreamEvent, context: Context
-let members: DataMapperMock
-let connectionRequests: DataMapperMock
 
 beforeEach(() => {
   jest.clearAllMocks()
   eventbridgeMock.reset()
   sesMock.reset()
+  dynamoMock.reset()
 
-  let dataMapperFactory = new DataMapperFactoryMock()
-  members = dataMapperFactory.create("Member")
-  connectionRequests = dataMapperFactory.create("ConnectionRequest")
-  DataMapperFactory.create = dataMapperFactory.map()
+  process.env.NetworkerProjection = "Networker"
+  process.env.ConnectionRequestTable = "ConnectionRequest"
 })
 
 test("integration event is sent", async () => {
 
   process.env.EventBusName = "NetworkingEventBus"
-  connectionRequests.queryResponse([
-    {initiatingMemberId: "5678",
-    invitedMemberId: "9012",
-    invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4"}])
-  members.queryResponse([Member.create("Barney Rubble", "brubble@hotmail.com", "5678")])
+  givenConnectionRequest({invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4", initiatingNetworkerId: "5678", invitedNetworkerId: "9012"})
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
   
   await whenConnectionAdded("5678", "9012")
 
   expectSentIntegrationEventToContain({
     Detail: JSON.stringify({
-      memberId: "5678",
-      connectionMemberId: "9012"
+      networkerId: "5678",
+      connectionNetworkerId: "9012"
     }),
     DetailType: "ConnectionAdded",
     EventBusName: "NetworkingEventBus",
@@ -48,11 +44,8 @@ test("integration event is sent", async () => {
 })
 
 test("email not sent if no connection request found", async () => {
-  connectionRequests.queryResponse([])
-  members.queryUsingSet([
-    Member.create("Barney Rubble", "brubble@hotmail.com", "5678"),
-    Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")
-  ], "id")
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
 
   await whenConnectionAdded("5678", "9012")
 
@@ -60,17 +53,12 @@ test("email not sent if no connection request found", async () => {
 })
 
 
-test("email sent to initiating member", async () => {
+test("email sent to initiating networker", async () => {
 
-  connectionRequests.queryResponse([
-    {initiatingMemberId: "5678",
-    invitedMemberId: "9012",
-    invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4"}])
-  members.queryUsingSet([
-    Member.create("Barney Rubble", "brubble@hotmail.com", "5678"),
-    Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")
-  ], "id")
-
+  givenConnectionRequest({invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4", initiatingNetworkerId: "5678", invitedNetworkerId: "9012"})
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
+  
   await whenConnectionAdded("5678", "9012")
 
   expectEmailContaining({
@@ -85,15 +73,10 @@ test("email sent to initiating member", async () => {
 test("email contains sender", async () => {
 
   process.env.NotificationEmailAddress = "beantins@dont-reply.com"
-  connectionRequests.queryResponse([
-    {initiatingMemberId: "5678",
-    invitedMemberId: "9012",
-    invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4"}])
-  members.queryUsingSet([
-    Member.create("Barney Rubble", "brubble@hotmail.com", "5678"),
-    Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")
-  ], "id")
-
+  givenConnectionRequest({invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4", initiatingNetworkerId: "5678", invitedNetworkerId: "9012"})
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
+  
   await whenConnectionAdded("5678", "9012")
 
   expectEmailContaining({"Source": "beantins@dont-reply.com"})
@@ -101,15 +84,10 @@ test("email contains sender", async () => {
 
 test("email contains subject", async () => {
 
-  connectionRequests.queryResponse([
-    {initiatingMemberId: "5678",
-    invitedMemberId: "9012",
-    invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4"}])
-  members.queryUsingSet([
-    Member.create("Barney Rubble", "brubble@hotmail.com", "5678"),
-    Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")
-  ], "id")
-
+  givenConnectionRequest({invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4", initiatingNetworkerId: "5678", invitedNetworkerId: "9012"})
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
+  
   await whenConnectionAdded("5678", "9012")
 
   expectEmailContaining({
@@ -123,15 +101,10 @@ test("email contains subject", async () => {
 
 test("email contains message", async () => {
 
-  connectionRequests.queryResponse([
-    {initiatingMemberId: "5678",
-    invitedMemberId: "9012",
-    invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4"}])
-  members.queryUsingSet([
-    Member.create("Barney Rubble", "brubble@hotmail.com", "5678"),
-    Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")
-  ], "id")
-
+  givenConnectionRequest({invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4", initiatingNetworkerId: "5678", invitedNetworkerId: "9012"})
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
+  
   await whenConnectionAdded("5678", "9012")
 
   const sendEmailCommand = sesMock.commandCalls(SendEmailCommand)[0].args[0]
@@ -141,31 +114,53 @@ test("email contains message", async () => {
 
 test("connection request is deleted", async () => {
 
-  connectionRequests.queryResponse([
-    {initiatingMemberId: "5678",
-    invitedMemberId: "9012",
-    invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4"}])
-  members.queryUsingSet([
-    Member.create("Barney Rubble", "brubble@hotmail.com", "5678"),
-    Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")
-  ], "id")
-
+  givenConnectionRequest({invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4", initiatingNetworkerId: "5678", invitedNetworkerId: "9012"})
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
+  
   await whenConnectionAdded("5678", "9012")
 
-  expect(connectionRequests.delete).toHaveBeenCalledWith({invitationId: "19fad027-c7b2-5c6b-9324-8ad086f04ff4"})
+  thenConnectionRequestDeleted("19fad027-c7b2-5c6b-9324-8ad086f04ff4")
 })
 
-async function whenConnectionAdded(memberId: string, connectionMemberId: string){
+function givenNetworker(networker: Networker)
+{
+  dynamoMock
+    .on(GetCommand, {
+      TableName: "Networker",
+      Key: {
+        id : networker.id,
+      }
+    }
+    ).resolves({Item: networker})
+}
+
+function givenConnectionRequest(request: ConnectionRequest)
+{
+  dynamoMock
+    .on(QueryCommand).resolves({Items: [request]})
+
+  // dynamoMock
+  //   .on(GetCommand, {
+  //     TableName: "ConnectionRequest",
+  //     Key: {
+  //       invitationId : request.invitationId,
+  //     }
+  //   }
+  //   ).resolves({Item: request})
+}
+
+async function whenConnectionAdded(networkerId: string, connectionNetworkerId: string){
   event = 
    {Records: [{
     eventName: "INSERT",
     dynamodb: {
       NewImage: {
-        memberId: {
-          S: memberId
+        networkerId: {
+          S: networkerId
         },
-        connectionMemberId: {
-          S: connectionMemberId
+        connectionNetworkerId: {
+          S: connectionNetworkerId
         },
       },
       OldImage: {}
@@ -174,6 +169,18 @@ async function whenConnectionAdded(memberId: string, connectionMemberId: string)
   }
 
   return await lambdaHandler(event, context)
+}
+
+function thenConnectionRequestDeleted(invitationId: string)
+{
+  expect(dynamoMock.commandCalls(DeleteCommand).length).toBe(1)
+  expect(dynamoMock.commandCalls(DeleteCommand)[0].args[0].input).toEqual(
+    expect.objectContaining({
+      Key: {invitationId: invitationId},
+      TableName: "ConnectionRequest"
+    })
+  )
+
 }
 
 function expectSentIntegrationEventToContain(matchingContent: any)

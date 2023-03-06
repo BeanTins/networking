@@ -5,14 +5,14 @@ import { PipelineBuilder } from "./pipeline-builder/pipeline-builder"
 import { NetworkingFactory} from "./networking-factory"
 import { StageParameters } from "../infrastructure/stage-parameters"
 import { BeanTinsCredentials, StoreType} from "../../credentials/infrastructure/beantins-credentials"
-import { EmailListenerStack } from "../features/connections/component-tests/helpers/email-listener-stack"
+import { EmailListenerStack } from "../features/connections/service-tests/helpers/email-listener-stack"
 import { EventListenerStack } from "../test-helpers/event-listener-stack"
-import { MembershipEventBusFake } from "../features/connections/component-tests/helpers/membership-event-bus-fake"
+import { MembershipEventBusFake } from "../features/connections/service-tests/helpers/membership-event-bus-fake"
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm"
 
 interface StageConfiguration
 {
-  memberProjectionTableArn: string
+  networkerProjectionTableArn: string
   connectionRequestTableArn: string
   connectionsTableArn: string
   conversationsTableArn: string
@@ -59,15 +59,15 @@ async function main(): Promise<void>
     {
       extractingSourceFrom: [{provider: SCM.GitHub, owner: "BeanTins", repository: "networking", branch: "main", accessIdentifier: sourceCodeArnConnection},
                             { provider: SCM.GitHub, owner: "BeanTins", repository: "credentials", branch: "main", accessIdentifier: sourceCodeArnConnection }],
-      executingCommands: ["cd ..\/credentials", "npm ci", "cd - ", "npm ci", "npm run test:component"],
+      executingCommands: ["cd ..\/credentials", "npm ci", "cd - ", "npm ci", "npm run test:service"],
       withEnvironmentVariables : {NetworkingTestEventListenerQueueName: Fn.importValue("NetworkingTestEventListenerQueueName"),
                                   NetworkingTestEmailListenerQueueName: Fn.importValue("NetworkingTestEmailListenerQueueName"),
                                   NetworkingTestUserPoolId: Fn.importValue("NetworkingTestUserPoolId"),
                                   NetworkingTestUserPoolMemberClientId: Fn.importValue("NetworkingTestUserPoolMemberClientId"),
                                   NetworkingTestMembershipEventBusFakeArn: Fn.importValue("NetworkingTestMembershipEventBusFakeArn")},
-      reporting: {fromDirectory: "reports/component-tests", withFiles: ["test-results.xml", "tests.log"], exportingTo: ExportType.S3},
+      reporting: {fromDirectory: "reports/service-tests", withFiles: ["test-results.xml", "tests.log"], exportingTo: ExportType.S3},
       withPermissionToAccess: [
-        {resource: testConfig.memberProjectionTableArn, withAllowableOperations: ["dynamodb:*"]},
+        {resource: testConfig.networkerProjectionTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.connectionsTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.connectionRequestTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.conversationsTableArn, withAllowableOperations: ["dynamodb:*"]},
@@ -138,7 +138,7 @@ function provisionTestResources(app: App) {
 
 async function getTestConfig() : Promise<StageConfiguration>
 {
-  return {memberProjectionTableArn: Fn.importValue("NetworkingTestMemberProjectionArn"),
+  return {networkerProjectionTableArn: Fn.importValue("NetworkingTestnetworkerProjectionArn"),
           connectionRequestTableArn: Fn.importValue("NetworkingTestConnectionRequestTableArn"),
           connectionsTableArn: Fn.importValue("NetworkingTestConnectionsTableArn"),
           conversationsTableArn: Fn.importValue("NetworkingTestConversationsTableArn"),
@@ -148,7 +148,7 @@ async function getTestConfig() : Promise<StageConfiguration>
 
 async function getProdConfig(): Promise<StageConfiguration>
 {
-  return {memberProjectionTableArn: Fn.importValue("MemberProjectionArnprod"),
+  return {networkerProjectionTableArn: Fn.importValue("networkerProjectionArnprod"),
     connectionRequestTableArn: Fn.importValue("ConnectionRequestTableArnprod"),
     connectionsTableArn: Fn.importValue("ConnectionsTableArnprod"),
     conversationsTableArn: Fn.importValue("ConversationsTableArnprod"),

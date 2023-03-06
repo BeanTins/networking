@@ -2,9 +2,9 @@
 import "source-map-support/register"
 import { App, Fn } from "aws-cdk-lib"
 import { BeanTinsCredentials, StoreType} from "../../credentials/infrastructure/beantins-credentials"
-import { MembershipEventBusFake } from "../features/connections/component-tests/helpers/membership-event-bus-fake"
+import { MembershipEventBusFake } from "../features/connections/service-tests/helpers/membership-event-bus-fake"
 import { NetworkingStage } from "./networking-stage"
-import { EmailListenerStack } from "../features/connections/component-tests/helpers/email-listener-stack"
+import { EmailListenerStack } from "../features/connections/service-tests/helpers/email-listener-stack"
 import { EventListenerStack } from "../test-helpers/event-listener-stack"
 import { StageParameters } from "../infrastructure/stage-parameters"
 
@@ -37,6 +37,7 @@ async function main(): Promise<void>
     notificationEmailAddress: NotificationEmailAddress,
     membershipEventBusArn: Fn.importValue("NetworkingDevMembershipEventBusFakeArn"),
     emailConfigurationSet: emailListener.ConfigSetName,
+    userPoolId: Fn.importValue("NetworkingDevUserPoolId"),
     userPoolArn: Fn.importValue("NetworkingDevUserPoolArn"),
     eventListenerQueueArn: Fn.importValue("NetworkingDevEventListenerQueueArn"),
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },

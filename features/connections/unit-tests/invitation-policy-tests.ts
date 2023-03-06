@@ -1,16 +1,15 @@
 import { lambdaHandler } from "../invitation-policy"
 import { Context, DynamoDBStreamEvent } from "aws-lambda"
-import { DataMapperFactoryMock, DataMapperMock} from "../../../test-helpers/data-mapper-factory-mock"
-import { DataMapperFactory } from "../../../infrastructure/data-mapper-factory"
-import { Member } from "../infrastructure/member-dao"
+import { Networker } from "../infrastructure/networker-dao"
 import {mockClient} from "aws-sdk-client-mock"
 import {SESClient, SendEmailCommand} from "@aws-sdk/client-ses"
 import { EventBridgeClient, PutEventsCommand } from "@aws-sdk/client-eventbridge"
+import {DynamoDBDocumentClient, GetCommand} from "@aws-sdk/lib-dynamodb"
 
+const dynamoMock = mockClient(DynamoDBDocumentClient)
 const sesMock = mockClient(SESClient)
 const eventbridgeMock = mockClient(EventBridgeClient)
 let event: DynamoDBStreamEvent, context: Context
-let membersDataMapper: DataMapperMock
 
 
 beforeEach(() => {
@@ -18,23 +17,24 @@ beforeEach(() => {
 
   sesMock.reset()
   eventbridgeMock.reset()
+  dynamoMock.reset()
 
-  let dataMapperFactory = new DataMapperFactoryMock()
-  membersDataMapper = dataMapperFactory.create("Member")
-  DataMapperFactory.create = dataMapperFactory.map()
+  process.env.NetworkerProjection = "Networker"
+  process.env.ConnectionRequestTable = "ConnectionRequest"
 })
 
 test("integration event is sent", async () => {
 
   process.env.EventBusName = "NetworkingEventBus"
-  membersDataMapper.queryResponse([Member.create("Barney Rubble", "brubble@hotmail.com", "5678")])
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
   
   await whenConnectionRequest("1234", "5678", "9012")
 
   expectSentEventToContain({
     Detail: JSON.stringify({
-      initiatingMemberId: "5678",
-      invitedMemberId: "9012",
+      initiatingNetworkerId: "5678",
+      invitedNetworkerId: "9012",
       invitationId: "1234"
     }),
     DetailType: "ConnectionRequested",
@@ -45,10 +45,8 @@ test("integration event is sent", async () => {
 
 test("email contains recipient", async () => {
 
-  membersDataMapper.queryUsingSet([
-    Member.create("Barney Rubble", "brubble@hotmail.com", "5678"),
-    Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")
-  ], "id")
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
 
   await whenConnectionRequest("1234", "5678", "9012")
 
@@ -64,10 +62,8 @@ test("email contains recipient", async () => {
 test("email contains sender", async () => {
 
   process.env.NotificationEmailAddress = "beantins@dont-reply.com"
-  membersDataMapper.queryUsingSet([
-    Member.create("Barney Rubble", "brubble@hotmail.com", "5678"),
-    Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")
-  ], "id")
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
 
   await whenConnectionRequest("1234", "5678", "9012")
 
@@ -76,10 +72,8 @@ test("email contains sender", async () => {
 
 test("email contains subject", async () => {
 
-  membersDataMapper.queryUsingSet([
-    Member.create("Barney Rubble", "brubble@hotmail.com", "5678"),
-    Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")
-  ], "id")
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
 
   await whenConnectionRequest("1234", "5678", "9012")
 
@@ -95,10 +89,8 @@ test("email contains subject", async () => {
 test("email contains message", async () => {
 
   process.env.ResponseUrl = "https://www.beantins.com/connection/response"
-  membersDataMapper.queryUsingSet([
-    Member.create("Barney Rubble", "brubble@hotmail.com", "5678"),
-    Member.create("Fred Flinstone", "fflinstone@gmail.com", "9012")
-  ], "id")
+  givenNetworker({name: "Barney Rubble", email: "brubble@hotmail.com", id: "5678"})
+  givenNetworker({name: "Fred Flinstone", email: "fflinstone@gmail.com", id: "9012"})
   
   await whenConnectionRequest("1234", "5678", "9012")
 
@@ -110,7 +102,19 @@ test("email contains message", async () => {
   expect(message).toContain("To reject, select the following: https://www.beantins.com/connection/response?invite=1234&decision=reject")
 })
 
-async function whenConnectionRequest(invitationId: string, initatingMemberId: string, invitedMemberId: string){
+function givenNetworker(networker: Networker)
+{
+  dynamoMock
+    .on(GetCommand, {
+      TableName: "Networker",
+      Key: {
+        id : networker.id,
+      }
+    }
+    ).resolves({Item: networker})
+}
+
+async function whenConnectionRequest(invitationId: string, initatingNetworkerId: string, invitedNetworkerId: string){
   event = 
    {Records: [{
     eventName: "INSERT",
@@ -119,11 +123,11 @@ async function whenConnectionRequest(invitationId: string, initatingMemberId: st
         invitationId: {
           S: invitationId
         },
-        initiatingMemberId: {
-          S: initatingMemberId
+        initiatingNetworkerId: {
+          S: initatingNetworkerId
         },
-        invitedMemberId: {
-          S: invitedMemberId
+        invitedNetworkerId: {
+          S: invitedNetworkerId
         },
       },
       OldImage: {}

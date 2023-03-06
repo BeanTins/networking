@@ -1,6 +1,6 @@
 import { Context, EventBridgeEvent } from "aws-lambda"
-import {MemberDAO} from "./infrastructure/member-dao"
-import { ConnectionRequestDAO, ConnectionRequest } from "./infrastructure/connection-request-dao"
+import {NetworkerDAO} from "./infrastructure/networker-dao"
+import { RequestDAO, ConnectionRequest } from "./infrastructure/request-dao"
 import { UnspecifiedConnectionRequest} from "./infrastructure/events"
 import logger from "../../infrastructure/lambda-logger"
 
@@ -9,7 +9,7 @@ export const lambdaHandler = async (event: EventBridgeEvent<any, any>, context: 
   try{
     const handler = new NotificationHandler()
 
-    await handler.handle(new UnspecifiedConnectionRequest(event.detail.initiatingMemberId, event.detail.invitedMemberId))
+    await handler.handle(new UnspecifiedConnectionRequest(event.detail.initiatingNetworkerId, event.detail.invitedNetworkerId))
   }
   catch(error)
   {
@@ -20,22 +20,21 @@ export const lambdaHandler = async (event: EventBridgeEvent<any, any>, context: 
 
 class NotificationHandler
 {
-  private memberDAO: MemberDAO
+  private networkerDAO: NetworkerDAO
   constructor()
   {
-    this.memberDAO = new MemberDAO()
+    this.networkerDAO = new NetworkerDAO(process.env.AWS_REGION!)
   }
 
   async handle(event: UnspecifiedConnectionRequest)
   {
-    if(await this.memberDAO.exists(event.initiatingMemberId))
+    if(await this.networkerDAO.exists(event.initiatingNetworkerId))
     {
-      const connectionRequestDAO = new ConnectionRequestDAO()
-      const connectionRequest = ConnectionRequest.create(event.initiatingMemberId, event.invitedMemberId)
-      await connectionRequestDAO.add(connectionRequest)
+      const connectionRequestDAO = new RequestDAO(process.env.AWS_REGION!)
+      await connectionRequestDAO.add(event.initiatingNetworkerId, event.invitedNetworkerId)
     }
     else{
-      throw Error("Unknown member initating connection request")
+      throw Error("Unknown networker initating connection request")
     }
   }
 }

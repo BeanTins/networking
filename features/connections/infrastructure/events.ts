@@ -1,19 +1,19 @@
 export class UnspecifiedConnectionRequest{
-    initiatingMemberId: string
-    invitedMemberId: string
+    initiatingNetworkerId: string
+    invitedNetworkerId: string
   
-    constructor(initiatingMemberId: string, invitedMemberId: string)
+    constructor(initiatingNetworkerId: string, invitedNetworkerId: string)
     {
-      if (!initiatingMemberId)
+      if (!initiatingNetworkerId)
       {
-          throw Error("UnspecifiedConnectionRequest missing field initiatingMemberId")
+          throw Error("UnspecifiedConnectionRequest missing field initiatingNetworkerId")
       }
-      if (!invitedMemberId)
+      if (!invitedNetworkerId)
       {
-          throw Error("UnspecifiedConnectionRequest missing field initiatingMemberId")
+          throw Error("UnspecifiedConnectionRequest missing field initiatingNetworkerId")
       }
-      this.initiatingMemberId = initiatingMemberId
-      this.invitedMemberId = invitedMemberId
+      this.initiatingNetworkerId = initiatingNetworkerId
+      this.invitedNetworkerId = invitedNetworkerId
     }
   }
   

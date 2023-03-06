@@ -4,7 +4,7 @@ import  { SQSClient,
   GetQueueUrlCommand, 
   ReceiveMessageResult,
   DeleteMessageCommand } from "@aws-sdk/client-sqs"
-import logger from "./component-test-logger"
+import logger from "./service-test-logger"
 
 interface EventListenerParameters{
   queueName: string

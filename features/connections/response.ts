@@ -1,7 +1,7 @@
 
 import { APIGatewayEvent, Context, APIGatewayProxyResult } from "aws-lambda"
 import { OpenAPISpecBuilder, HttpMethod} from "../../infrastructure/open-api-spec"
-import { ConnectionRequestDAO } from "./infrastructure/connection-request-dao"
+import { RequestDAO } from "./infrastructure/request-dao"
 import { ConnectionsDAO } from "./infrastructure/connections-dao"
 import { HttpResponse } from "../../infrastructure/http-response"
 import logger  from "../../infrastructure/lambda-logger"
@@ -12,12 +12,12 @@ export class SpecBuilderFactory
   {
     const specBuilder = new OpenAPISpecBuilder("3.0.0")
 
-    specBuilder.describedAs("connection response", "member response to a connection invitation on the BeanTins service", "1.9.0")
+    specBuilder.describedAs("connection response", "networker response to a connection invitation on the BeanTins service", "1.9.0")
   
     const endpoint = specBuilder.withEndpoint("/connection/request/{invitationId}/decision/{decision}", HttpMethod.Post)
   
-    endpoint.withStringPathParameter({name: "invitationId", description: "the ID of a connection invitation from one member to another"})
-    endpoint.withStringPathParameter({name: "decision", description: "the decision that the invited member has made on the connection request", enum: ["approve,reject"]})
+    endpoint.withStringPathParameter({name: "invitationId", description: "the ID of a connection invitation from one networker to another"})
+    endpoint.withStringPathParameter({name: "decision", description: "the decision that the invited networker has made on the connection request", enum: ["approve,reject"]})
     endpoint.withResponse("201", "connection created")
     endpoint.withResponse("400", "connection response failed")
   
@@ -69,11 +69,11 @@ async request(responseDTO: any) {
 
 export class ResponseCommandHandler {
 
-  private connectionRequestDAO: ConnectionRequestDAO
+  private connectionRequestDAO: RequestDAO
   private connectionDAO: ConnectionsDAO
 
   public constructor() {
-    this.connectionRequestDAO = new ConnectionRequestDAO()
+    this.connectionRequestDAO = new RequestDAO(process.env.AWS_REGION!)
     this.connectionDAO = new ConnectionsDAO(process.env.AWS_REGION!)
   }
 
@@ -84,7 +84,7 @@ export class ResponseCommandHandler {
       {
         if (command.decision == "approve")
         {
-          await this.connectionDAO.add(connectionRequest.initiatingMemberId, connectionRequest.invitedMemberId) 
+          await this.connectionDAO.add(connectionRequest.initiatingNetworkerId, connectionRequest.invitedNetworkerId) 
         }
         else if (command.decision == "reject")
         {

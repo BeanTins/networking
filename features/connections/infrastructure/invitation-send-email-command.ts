@@ -1,10 +1,10 @@
-import { Member } from "./member-dao";
+import { Networker } from "./networker-dao";
 import { SendEmailCommand } from "@aws-sdk/client-ses"
 import logger from "../../../infrastructure/lambda-logger"
 
 export class InvitationSendEmailCommand {
 
-  static build(sender: Member, recipient: Member, invitationId: string, senderEmail: string) {
+  static build(sender: Networker, recipient: Networker, invitationId: string, senderEmail: string) {
     
     let command: any
 
@@ -20,7 +20,7 @@ export class InvitationSendEmailCommand {
     return command
   }
 
-  static buildCommand(sender: Member, recipient: Member, invitationId: string, senderEmail: string) {
+  static buildCommand(sender: Networker, recipient: Networker, invitationId: string, senderEmail: string) {
     let params: any = {
       Destination: {
         ToAddresses: [recipient.email],
@@ -51,7 +51,7 @@ export class InvitationSendEmailCommand {
     return new SendEmailCommand(params)
   }
 
-  static getHtmlContent(sender: Member, recipient: Member, invitationId: string) {
+  static getHtmlContent(sender: Networker, recipient: Networker, invitationId: string) {
     const approvalUrl = InvitationSendEmailCommand.buildResponseUrl(invitationId, "approve")
     const rejectUrl = InvitationSendEmailCommand.buildResponseUrl(invitationId, "reject")
 
@@ -66,7 +66,7 @@ export class InvitationSendEmailCommand {
       `;
   }
 
-  static getTextContent(sender: Member, recipient: Member, invitationId: string) {
+  static getTextContent(sender: Networker, recipient: Networker, invitationId: string) {
 
     const approvalUrl = this.buildResponseUrl(invitationId, "approve")
     const rejectUrl = this.buildResponseUrl(invitationId, "reject")

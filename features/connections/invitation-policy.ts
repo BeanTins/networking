@@ -2,7 +2,7 @@ import { Context, DynamoDBStreamEvent } from "aws-lambda"
 import { unmarshall } from "@aws-sdk/util-dynamodb"
 import { AttributeValue} from "@aws-sdk/client-dynamodb"
 import { ConnectionRequested } from "./domain/events"
-import { MemberDAO } from "./infrastructure/member-dao"
+import { NetworkerDAO } from "./infrastructure/networker-dao"
 import logger from "../../infrastructure/lambda-logger"
 import { InvitationSendEmailCommand } from "./infrastructure/invitation-send-email-command"
 import { SESClient } from "@aws-sdk/client-ses"
@@ -33,7 +33,7 @@ class InvitationPolicy {
 
       if (event != undefined)
       {
-        const command = new SendInvitationEmailCommand(event.invitationId, event.initiatingMemberId, event.invitedMemberId)
+        const command = new SendInvitationEmailCommand(event.invitationId, event.initiatingNetworkerId, event.invitedNetworkerId)
 
         await this.commandHandler.handle(command)
 
@@ -64,7 +64,7 @@ class InvitationPolicy {
         }
       )
     
-      event = new ConnectionRequested(connectionRequest.initiatingMemberId, connectionRequest.invitedMemberId, connectionRequest.invitationId)
+      event = new ConnectionRequested(connectionRequest.initiatingNetworkerId, connectionRequest.invitedNetworkerId, connectionRequest.invitationId)
     }
 
     return event
@@ -73,18 +73,18 @@ class InvitationPolicy {
 
 class SendInvitationEmailCommandHandler {
 
-  private memberDAO: MemberDAO
+  private networkerDAO: NetworkerDAO
   private emailClient: SESClient
 
   public constructor() {
-    this.memberDAO = new MemberDAO()
+    this.networkerDAO = new NetworkerDAO(process.env.AWS_REGION!)
     this.emailClient = new SESClient({ region: process.env.AWS_REGION! })
   }
 
   async handle(command: SendInvitationEmailCommand) {
 
-    const sender = await this.memberDAO.load(command.initiatingMemberId)
-    const recipient = await this.memberDAO.load(command.invitedMemberId)
+    const sender = await this.networkerDAO.load(command.initiatingNetworkerId)
+    const recipient = await this.networkerDAO.load(command.invitedNetworkerId)
 
     await this.emailClient.send(InvitationSendEmailCommand.build(sender!, recipient!, command.invitationId, process.env.NotificationEmailAddress!))
   }
@@ -92,15 +92,15 @@ class SendInvitationEmailCommandHandler {
 
 class SendInvitationEmailCommand {
 
-  constructor(invitationId: string, initiatingMemberId: string, invitedMemberId: string){
+  constructor(invitationId: string, initiatingNetworkerId: string, invitedNetworkerId: string){
     this.invitationId = invitationId
-    this.initiatingMemberId = initiatingMemberId
-    this.invitedMemberId = invitedMemberId
+    this.initiatingNetworkerId = initiatingNetworkerId
+    this.invitedNetworkerId = invitedNetworkerId
   }
 
   invitationId: string
-  initiatingMemberId: string
-  invitedMemberId: string
+  initiatingNetworkerId: string
+  invitedNetworkerId: string
 }
 
 

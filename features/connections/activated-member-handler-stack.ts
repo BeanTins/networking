@@ -8,7 +8,7 @@ import {EventBus, Rule} from "aws-cdk-lib/aws-events"
 import {LambdaFunction} from "aws-cdk-lib/aws-events-targets"
 
 interface ActivatedMemberHandlerStackProps extends StackProps {
-  memberProjectionName: string
+  networkerProjectionName: string
   membershipEventBusArn: string
 }
 
@@ -20,7 +20,7 @@ export class ActivatedMemberHandler extends Stack {
     super(scope, id, props)
 
     this.lambda = new NodejsFunction(this, "MemberActivatedHandlerFunction", {
-      environment: {MemberProjection: props.memberProjectionName},
+      environment: {NetworkerProjection: props.networkerProjectionName},
       memorySize: 1024,
       timeout: Duration.seconds(5),
       runtime: Runtime.NODEJS_16_X,
