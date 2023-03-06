@@ -15,7 +15,6 @@ interface StageConfiguration
   networkerProjectionTableArn: string
   connectionRequestTableArn: string
   connectionsTableArn: string
-  conversationsTableArn: string
   userPoolArn: string
   notificationEmailAddress: string
 }
@@ -70,7 +69,6 @@ async function main(): Promise<void>
         {resource: testConfig.networkerProjectionTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.connectionsTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.connectionRequestTableArn, withAllowableOperations: ["dynamodb:*"]},
-        {resource: testConfig.conversationsTableArn, withAllowableOperations: ["dynamodb:*"]},
         {resource: testConfig.userPoolArn, withAllowableOperations: ["cognito-idp:*"]},
         {resource: Fn.importValue("NetworkingTestMembershipEventBusFakeArn"), withAllowableOperations: ["events:*"]},
         {resource: Fn.importValue("NetworkingTestEventListenerQueueArn"), withAllowableOperations: ["sqs:*"]},
@@ -138,20 +136,18 @@ function provisionTestResources(app: App) {
 
 async function getTestConfig() : Promise<StageConfiguration>
 {
-  return {networkerProjectionTableArn: Fn.importValue("NetworkingTestnetworkerProjectionArn"),
+  return {networkerProjectionTableArn: Fn.importValue("NetworkingTestNetworkerProjectionArn"),
           connectionRequestTableArn: Fn.importValue("NetworkingTestConnectionRequestTableArn"),
-          connectionsTableArn: Fn.importValue("NetworkingTestConnectionsTableArn"),
-          conversationsTableArn: Fn.importValue("NetworkingTestConversationsTableArn"),
+          connectionsTableArn: Fn.importValue("NetworkingTestConnectionConnectionsTableArn"),
           userPoolArn: Fn.importValue("NetworkingTestUserPoolArn"),
           notificationEmailAddress: await new StageParameters("us-east-1").retrieveFromStage("NotificationEmailAddress", "test")}
 }
 
 async function getProdConfig(): Promise<StageConfiguration>
 {
-  return {networkerProjectionTableArn: Fn.importValue("networkerProjectionArnprod"),
-    connectionRequestTableArn: Fn.importValue("ConnectionRequestTableArnprod"),
-    connectionsTableArn: Fn.importValue("ConnectionsTableArnprod"),
-    conversationsTableArn: Fn.importValue("ConversationsTableArnprod"),
+  return {networkerProjectionTableArn: Fn.importValue("NetworkingProdNetworkerProjectionArnprod"),
+    connectionRequestTableArn: Fn.importValue("NetworkingProdConnectionRequestTableArnprod"),
+    connectionsTableArn: Fn.importValue("NetworkingProdConnectionConnectionsTableArnprod"),
     userPoolArn: await new StageParameters(process.env.AWS_REGION!).retrieveFromStage("userPoolArn", "prod"),
     notificationEmailAddress: await new StageParameters(process.env.AWS_REGION!).retrieveFromStage("NotificationEmailAddress", "prod")}
 }
