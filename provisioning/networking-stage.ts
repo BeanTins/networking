@@ -22,9 +22,8 @@ export class NetworkingStage extends Stage implements Stage{
   private _envvars: string[]
 
   get envvars(): string[] {
-    console.log("*****" + JSON.stringify(this._envvars))
+    console.log(this._envvars)
     return this._envvars
-
   }
 
   constructor(scope: Construct, id: string, props: NetworkingStageProps) {

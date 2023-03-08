@@ -72,7 +72,8 @@ async function main(): Promise<void>
         {resource: testConfig.userPoolArn, withAllowableOperations: ["cognito-idp:*"]},
         {resource: Fn.importValue("NetworkingTestMembershipEventBusFakeArn"), withAllowableOperations: ["events:*"]},
         {resource: Fn.importValue("NetworkingTestEventListenerQueueArn"), withAllowableOperations: ["sqs:*"]},
-        {resource: Fn.importValue("NetworkingTestEmailListenerQueueArn"), withAllowableOperations: ["sqs:*"]},
+        {resource: Fn.importValue("NetworkingTestConnectionValidateConnectionsQueuesRequestQueueArn"), withAllowableOperations: ["sqs:*"]},
+        {resource: Fn.importValue("NetworkingTestConnectionValidateConnectionsQueuesResponseQueueArn"), withAllowableOperations: ["sqs:*"]},
         {resource: "*", withAllowableOperations: ["ssm:GetParameter"]}
       ],
       withCustomDefinitions: {userPoolArn: testConfig.userPoolArn, 

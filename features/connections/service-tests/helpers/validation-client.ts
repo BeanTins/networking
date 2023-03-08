@@ -50,7 +50,7 @@ export class ValidationClient
       }
       catch(error)
       {
-        logger.error("Failed to get validate request queue url -  " + error)
+        logger.error("Failed to get validate request queue url for " + this.requestQueueName + " with error " + error)
         throw error
       }
     }
