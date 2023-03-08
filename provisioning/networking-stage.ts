@@ -19,16 +19,20 @@ export class NetworkingStage extends Stage implements Stage{
   private eventBus: NetworkingEventBus
   private stackFactory: StackFactory
   private connectionInfrastructure: ConnectionInfrastructure
+  private _envvars: string[]
 
   get envvars(): string[] {
-    return this.stackFactory.envvars
+    console.log("*****" + JSON.stringify(this._envvars))
+    return this._envvars
+
   }
 
   constructor(scope: Construct, id: string, props: NetworkingStageProps) {
     
     super(scope, id, props)
 
-    this.stackFactory = new StackFactory(props.stackNamePrepend, undefined, this)
+    this._envvars = []
+    this.stackFactory = new StackFactory(props.stackNamePrepend, undefined, this, this._envvars)
 
     this.eventBus = this.stackFactory.create(NetworkingEventBus, { stageName: props.stageName })
 
@@ -36,7 +40,7 @@ export class NetworkingStage extends Stage implements Stage{
       this.eventBus.listenOnQueueFor(props.eventListenerQueueArn)
     }
 
-    this.connectionInfrastructure = new ConnectionInfrastructure(props.stackNamePrepend, this)
+    this.connectionInfrastructure = new ConnectionInfrastructure(props.stackNamePrepend, this, this._envvars)
 
     this.connectionInfrastructure.build(props.membershipEventBusArn, 
       props.stageName, 

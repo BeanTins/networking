@@ -7,17 +7,13 @@ export class StackFactory{
   private stage: Stage
   private _envvars: string[]
 
-  public constructor(serviceName: string | undefined, featureName: string | undefined, stage: Stage) {
+  public constructor(serviceName: string | undefined, featureName: string | undefined, stage: Stage, envvars: string[]) {
     this.serviceName = serviceName
     this.featureName = featureName
     this.stage = stage
-    this._envvars = []
+    this._envvars = envvars
   }
 
-  public get envvars(): string[] {
-    return this._envvars
-  }
-  
   create<Type, PropType>(type: (new (scope: Construct, id: string, props: PropType) => Type), props?: PropType): Type {
     
     if (this.serviceName != undefined)
@@ -47,7 +43,9 @@ export class StackFactory{
     if (stack.envvars != undefined)
     {
       // @ts-ignore
-      this._envvars = this._envvars.concat(stack.envvars)
+      stack.envvars.forEach((envvar: string) => {
+        this._envvars.push(envvar)
+      })
     }
 
     return stack

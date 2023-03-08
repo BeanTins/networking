@@ -40,10 +40,10 @@ export class ConnectionInfrastructure{
   private validateConnectionsQueues: ValidateConnectionsQueues
   private validateQuery: ValidateQuery 
 
-  public constructor(serviceName: string | undefined, stage: Stage) {
+  public constructor(serviceName: string | undefined, stage: Stage, envvars: string[]) {
     this.serviceName = serviceName
     this.stage = stage
-    this.stackFactory = new StackFactory(serviceName, "Connection", stage)
+    this.stackFactory = new StackFactory(serviceName, "Connection", stage, envvars)
   }
 
   build(membershipEventBusArn: string, 

@@ -23,7 +23,7 @@
     "destroy": "npx cdk destroy NetworkingDev* NetworkingDev/* --app \"npx ts-node provisioning/networking-dev.ts\" --require-approval never",
     "deploy:pipeline": "npx cdk deploy NetworkingTest* Networking/*/* --app \"npx ts-node --prefer-ts-exts provisioning/networking-pipeline.ts\" --require-approval never;npx cdk deploy Networking --app \"npx ts-node --prefer-ts-exts provisioning/networking-pipeline.ts\" --require-approval never",
     "synth": "npx cdk synth --app \"npx ts-node --prefer-ts-exts provisioning/networking-dev.ts\"",
-    "synth:pipeline": "npx cdk synth --all --app \"npx ts-node --prefer-ts-exts provisioning/networking-pipeline.ts\"",
+    "synth:pipeline": "npx cdk synth NetworkingTest* Networking/*/* --app \"npx ts-node --prefer-ts-exts provisioning/networking-pipeline.ts\"",
     "destroy:pipeline": "npx cdk destroy --all --app \"npx ts-node --prefer-ts-exts provisioning/networking-pipeline.ts\"",
     "list:pipeline": "npx cdk list --all --app \"npx ts-node --prefer-ts-exts provisioning/networking-pipeline.ts\"",
     "list": "npx cdk list --all --app \"npx ts-node --prefer-ts-exts provisioning/networking-dev.ts\""
