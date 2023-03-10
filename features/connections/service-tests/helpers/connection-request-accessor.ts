@@ -69,7 +69,7 @@ export class ConnectionRequestAccessor {
     }
   }
 
-  async waitForRemoval(initiatingNetworkerId: string, invitedNetworkerId: string, retries: number = 3, retryWaitInMillisecs = 500)
+  async waitForRemoval(initiatingNetworkerId: string, invitedNetworkerId: string, retries: number = 4, retryWaitInMillisecs = 500)
   {
     let itemRemoved: boolean = false
     var params = {

@@ -72,10 +72,14 @@ export class RequestDAO
         }
       }))
       request = result.Item
+      logger.verbose("retrieved invitationId " + invitationId + " with result " + JSON.stringify(result))
     } 
     catch(err)
     {
-      logger.error("connection request retrieval failed with " + JSON.stringify(err))
+      logger.error("connection request retrieval failed for invitationId: " +
+                   invitationId + 
+                   " with " + 
+                   JSON.stringify(err))
     }
 
     return request
@@ -96,6 +100,8 @@ export class RequestDAO
         }        
       }))
 
+      logger.verbose("retrieved initiatingNetworkerId " + invitationId + " invitedNetworkerId " + invitedNetworkerId + " with result " + JSON.stringify(result))
+
       if (result.Items != undefined)
       {
         invitationId = result.Items[0].invitationId
@@ -103,7 +109,12 @@ export class RequestDAO
     } 
     catch(err)
     {
-      logger.error("connection request retrieval failed with " + JSON.stringify(err))
+      logger.error("connection request invitiation id retrieval failed for initiatingNetworkerId: ", +
+      initiatingNetworkerId + 
+      " , invitedNetworkerId: " +
+      invitedNetworkerId +
+      "with " +
+      JSON.stringify(err))
     }
 
     return invitationId

@@ -76,7 +76,7 @@ export class EmailListenerQueueClient {
       }
       catch(error)
       {
-        logger.error("Failed to get event listener queue url -  " + error)
+        logger.error("Failed to get email listener queue url -  " + error)
         throw error
       }
     }
